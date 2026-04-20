@@ -32,6 +32,7 @@ from app.instesre_bird.bird_calculator import (
 from app.outer_apis.openmeteo.fetch_openmeteo import fetch_open_meteo
 from app.schemas.openmeteo_schemas import OpenMeteoRequestSchema
 from app.core.logger import alogger
+from app.core.exceptions import ExternalAPIError
 
 
 # ---------------------------------------------------------------------------
@@ -255,9 +256,10 @@ def create_bird_df(
     hourly_df: pd.DataFrame | None = meteo_result["hourly_dataframe"]
 
     if hourly_df is None or hourly_df.empty:
-        raise RuntimeError(
-            f"Open-Meteo returned no hourly data for ({lat}, {lon}) "
-            f"from {start_date} to {end_date}"
+        raise ExternalAPIError(
+            "Open-Meteo",
+            f"No hourly data returned for ({lat}, {lon}) "
+            f"from {start_date} to {end_date}",
         )
 
     alogger.info("Open-Meteo hourly data retrieved — shape: %s", hourly_df.shape)

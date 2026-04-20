@@ -2,7 +2,7 @@
 """Deep comparison service: every model × every avg-year strategy.
 
 Produces a matrix of results that allows side-by-side comparison of all
-clearsky models and averaging strategies for the same location and period.
+solar simulation models and averaging strategies for the same location and period.
 """
 
 from __future__ import annotations

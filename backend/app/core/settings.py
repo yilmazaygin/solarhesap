@@ -24,7 +24,12 @@ class Settings(BaseSettings):
     LOG_BASE_LEVEL: str = "INFO"
     LOG_STREAM_HANDLER: bool = False
     LOG_DIR: Optional[str] = None
+
     OPENMETEO_TIMEOUT: int = 30
+    PVGIS_TIMEOUT: int = 90
+
+    RETRY_MAX_ATTEMPTS: int = 3
+    RETRY_WAIT_MULTIPLIER: float = 2.0
 
     model_config = SettingsConfigDict(
         env_file=".env",

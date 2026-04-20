@@ -31,11 +31,15 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # --- Register custom error handlers ---
+    from app.core.error_handlers import register_error_handlers
+    register_error_handlers(app)
+
     # --- Register API routers ---
-    from app.api.v1.clearsky_routes import router as clearsky_router
+    from app.api.v1.solar_simulation_routes import router as solar_simulation_router
     from app.api.v1.solar_tools_routes import router as solar_tools_router
 
-    app.include_router(clearsky_router, prefix="/api/v1")
+    app.include_router(solar_simulation_router, prefix="/api/v1")
     app.include_router(solar_tools_router, prefix="/api/v1")
 
     @app.get("/", tags=["Health"])

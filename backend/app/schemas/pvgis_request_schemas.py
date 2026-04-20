@@ -10,7 +10,7 @@ class PVGISBaseRequestSchema(BaseModel):
     latitude: float = Field(default=..., ge=-90, le=90, description="Latitude in degrees north.")
     longitude: float = Field(default=..., ge=-180, le=180, description="Longitude in degrees east.")
     url: str = Field(default=settings.PVGIS_BASE_URL, description="Base PVGIS API URL.")
-    timeout: int = Field(default=30, gt=0, description="Request timeout in seconds.")
+    timeout: int = Field(default=settings.PVGIS_TIMEOUT, gt=0, description="Request timeout in seconds.")
 
     def to_pvlib_params(self) -> dict[str, Any]:
         """Convert the schema into parameters compatible with pvlib."""

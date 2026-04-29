@@ -29,9 +29,13 @@ from app.schemas.clearsky_api_schemas import (
     DeepComparisonRequest,
     RunModelChainRequest,
 )
+from app.schemas.advanced_modelchain_schemas import RunModelChainAdvancedRequest
+from app.schemas.irradiance_generator_schemas import GenerateIrradianceRequest
 from app.services import clearsky_service
 from app.services.modelchain_service import run_modelchain as _run_modelchain
 from app.services.deep_comparison import run_deep_comparison
+from app.services.advanced_modelchain_service import run_advanced_modelchain as _run_advanced_modelchain
+from app.services.irradiance_generator_service import generate_irradiance as _generate_irradiance
 
 router = APIRouter(prefix="/solar-simulation", tags=["Solar Simulation Models"])
 
@@ -113,3 +117,42 @@ async def run_modelchain(request: RunModelChainRequest):
     Uses ``asyncio.to_thread`` to avoid blocking the event loop.
     """
     return await asyncio.to_thread(_run_modelchain, request)
+
+
+@router.post("/run-modelchain-advanced", summary="Advanced PVLib ModelChain Simulation")
+async def run_modelchain_advanced(request: RunModelChainAdvancedRequest):
+    """Run an advanced PVLib ModelChain simulation with full feature access.
+
+    Key improvements over run-modelchain:
+    - Module and inverter loaded directly from SAM databases (CECMod,
+      SandiaMod, CECInverter, SandiaInverter, ADRInverter)
+    - Multi-array mode: each array gets its own orientation, module params,
+      and temperature model (pvlib Array objects with FixedMount)
+    - Temperature model uses pvlib named configs (sapm, pvsyst) or manual
+    - Flat system mode: classic single-system configuration
+    - Fail-fast validation before expensive weather fetches
+
+    Supports all pvlib DC models (pvwatts, cec, sapm, desoto, pvsyst)
+    and AC models (pvwatts, sandia, adr).
+
+    Uses ``asyncio.to_thread`` to avoid blocking the event loop.
+    """
+    return await asyncio.to_thread(_run_advanced_modelchain, request)
+
+
+# ===========================================================================
+# Irradiance Generator — raw timeseries, no averaging
+# ===========================================================================
+
+@router.post("/generate-irradiance", summary="Generate Raw Irradiance Timeseries")
+async def generate_irradiance(request: GenerateIrradianceRequest):
+    """Generate raw hourly irradiance data for a location and time range.
+
+    No average-year strategies are applied — returns the full timeseries.
+
+    For PVGIS TMY the response also includes a simplified record set where
+    the year is stripped and only day_of_year + hour are used as time index.
+
+    Uses ``asyncio.to_thread`` to avoid blocking the event loop.
+    """
+    return await asyncio.to_thread(_generate_irradiance, request)

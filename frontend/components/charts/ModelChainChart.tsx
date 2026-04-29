@@ -538,6 +538,56 @@ export default function ModelChainChart({ title, simulation_results }: ModelChai
           )}
         </ResponsiveContainer>
       </div>
+
+      {/* Contextual totals summary */}
+      <div className="mt-4 flex flex-wrap gap-3 border-t border-white/[0.06] pt-4">
+        {strategies.map((strat, i) => {
+          const ac = simulation_results[strat]?.ac;
+          const total = (() => {
+            if (!ac || typeof ac !== "object") return 0;
+            if (activeTab === "typical") {
+              let sum = 0;
+              const days = new Set<string>();
+              for (const [dt, v] of Object.entries(ac)) {
+                if (typeof v !== "number" || !isFinite(v)) continue;
+                const d = safeParseDate(dt);
+                if (isNaN(d.getTime())) continue;
+                sum += v / 1000;
+                days.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
+              }
+              return days.size > 0 ? sum / days.size : 0;
+            }
+            return Object.entries(ac).reduce((sum: number, [dt, v]) => {
+              if (typeof v !== "number" || !isFinite(v)) return sum;
+              if (drillLevel === "annual") return sum + v / 1000;
+              const dateObj = safeParseDate(dt);
+              if (isNaN(dateObj.getTime())) return sum;
+              if (drillLevel === "month") return dateObj.getMonth() === selectedMonth ? sum + v / 1000 : sum;
+              if (drillLevel === "day") return dateObj.getMonth() === selectedMonth && dateObj.getDate() === selectedDay ? sum + v / 1000 : sum;
+              return sum + v / 1000;
+            }, 0);
+          })();
+
+          const unit = activeTab === "typical" || drillLevel === "day" ? "kWh/gün" : drillLevel === "month" ? "kWh/ay" : "kWh/yıl";
+          const label = t(`constants.strategies.${strat}.label` as any) || strat;
+          const isHidden = hiddenStrats.has(strat);
+          return (
+            <div
+              key={strat}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${
+                isHidden
+                  ? "border-white/[0.04] bg-transparent opacity-40"
+                  : "border-white/[0.1] bg-white/[0.04]"
+              }`}
+            >
+              <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+              <span className="text-xs text-slate-400">{label}</span>
+              <span className="text-sm font-bold text-white">{total < 100 ? total.toFixed(2) : Math.round(total).toLocaleString()}</span>
+              <span className="text-[10px] text-slate-500">{unit}</span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

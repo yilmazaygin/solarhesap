@@ -93,6 +93,17 @@ export function runModelChain(data: AnyData) {
   return request("/solar-simulation/run-modelchain", data, { timeout: getTimeout(data, 180000) });
 }
 
+export function runModelChainAdvanced(data: AnyData) {
+  return request("/solar-simulation/run-modelchain-advanced", data, { timeout: getTimeout(data, 180000) });
+}
+
+export function generateIrradiance(data: AnyData) {
+  const years =
+    data.start_year && data.end_year ? data.end_year - data.start_year + 1 : 1;
+  const timeout = years > 5 ? 300000 : 180000;
+  return request("/solar-simulation/generate-irradiance", data, { timeout });
+}
+
 /* ── Solar Tools Endpoints ───────────────────────────── */
 
 export function calcJulianDay(data: AnyData) {
@@ -153,4 +164,38 @@ export function calcOptimalTilt(data: AnyData) {
 
 export function calcPoaIrradiance(data: AnyData) {
   return request("/solar-tools/poa-irradiance", data);
+}
+
+/* ── SAM Database & Advanced ModelChain Helpers ─────── */
+
+export async function searchSamComponents(
+  db: string,
+  search: string,
+  limit = 50,
+  offset = 0
+): Promise<AnyData> {
+  const params = new URLSearchParams({ db, limit: String(limit), offset: String(offset) });
+  if (search) params.append("search", search);
+  const res = await fetch(`${API_BASE_URL}/solar-tools/list-sam-components?${params}`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new ApiError(res.status, body.detail || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function getSamComponentDetail(db: string, name: string): Promise<AnyData> {
+  const params = new URLSearchParams({ db, name });
+  const res = await fetch(`${API_BASE_URL}/solar-tools/sam-component-detail?${params}`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new ApiError(res.status, body.detail || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function getTemperatureModelConfigs(): Promise<AnyData> {
+  const res = await fetch(`${API_BASE_URL}/solar-tools/temperature-model-configs`);
+  if (!res.ok) throw new ApiError(res.status, res.statusText);
+  return res.json();
 }

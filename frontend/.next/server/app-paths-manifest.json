@@ -1,5 +1,4 @@
 {
-  "/page": "app/page.js",
-  "/simulation/page": "app/simulation/page.js",
-  "/calculation/page": "app/calculation/page.js"
+  "/irradiance/page": "app/irradiance/page.js",
+  "/modelchain/page": "app/modelchain/page.js"
 }

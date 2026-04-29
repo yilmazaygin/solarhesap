@@ -132,3 +132,46 @@ export const DEFAULTS = {
 
 // --- API Base URL ---
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
+
+// --- SAM Databases ---
+export const SAM_MODULE_DBS = [
+  { value: "CECMod", label: "CEC Modules (21,500+)", dcModel: "cec", description: "CEC modülü veritabanı — DC model: cec" },
+  { value: "SandiaMod", label: "Sandia Modules (523)", dcModel: "sapm", description: "Sandia/SAPM modül veritabanı — DC model: sapm" },
+] as const;
+
+export const SAM_INVERTER_DBS = [
+  { value: "CECInverter", label: "CEC Inverters (3,264)", acModel: "sandia", description: "CEC evirici veritabanı — AC model: sandia" },
+  { value: "SandiaInverter", label: "Sandia Inverters (3,264)", acModel: "sandia", description: "Sandia evirici veritabanı — AC model: sandia" },
+  { value: "ADRInverter", label: "ADR Inverters (4,600+)", acModel: "adr", description: "ADR evirici veritabanı — AC model: adr" },
+] as const;
+
+// Temperature model configs (mirrors pvlib.temperature.TEMPERATURE_MODEL_PARAMETERS)
+export const TEMP_MODEL_CONFIGS: Record<string, { value: string; label: string }[]> = {
+  sapm: [
+    { value: "open_rack_glass_glass", label: "Open Rack / Glass-Glass" },
+    { value: "close_mount_glass_glass", label: "Close Mount / Glass-Glass" },
+    { value: "open_rack_glass_polymer", label: "Open Rack / Glass-Polymer" },
+    { value: "insulated_back_glass_polymer", label: "Insulated Back / Glass-Polymer" },
+  ],
+  pvsyst: [
+    { value: "freestanding", label: "Freestanding (u_c=29, u_v=0)" },
+    { value: "insulated", label: "Insulated (u_c=15, u_v=0)" },
+  ],
+};
+
+export const TEMP_MODELS = [
+  { value: "sapm", label: "SAPM" },
+  { value: "pvsyst", label: "PVsyst" },
+] as const;
+
+// DC/AC model compatibility hints
+export const DC_MODEL_HINTS: Record<string, string> = {
+  CECMod: "cec",
+  SandiaMod: "sapm",
+};
+
+export const AC_MODEL_HINTS: Record<string, string> = {
+  CECInverter: "sandia",
+  SandiaInverter: "sandia",
+  ADRInverter: "adr",
+};

@@ -13,7 +13,8 @@ export default function Navbar() {
 
   const navLinks = [
     { href: "/", label: t("nav.home") },
-    { href: "/simulation", label: t("nav.simulation") },
+    { href: "/irradiance", label: language === "tr" ? "Irradiance" : "Irradiance" },
+    { href: "/modelchain", label: "ModelChain" },
     { href: "/calculation", label: t("nav.calculation") },
   ];
 

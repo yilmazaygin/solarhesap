@@ -1105,8 +1105,12 @@ function ModelChainTab(props: TabProps) {
               {SOLAR_MODELS.map((m) => (<option key={m.value} value={m.value}>{t(`constants.models.${m.value}.label` as any)}</option>))}
             </select>
           </div>
-          <div><label className="input-label">{t("simulation.individual.startYear")}</label><input {...register("start_year")} type="number" className="input-field" /></div>
-          <div><label className="input-label">{t("simulation.individual.endYear")}</label><input {...register("end_year")} type="number" className="input-field" /></div>
+          {weatherSource !== "pvgis_tmy" && (
+            <div><label className="input-label">{t("simulation.individual.startYear")}</label><input {...register("start_year")} type="number" className="input-field" /></div>
+          )}
+          {weatherSource !== "pvgis_tmy" && (
+            <div><label className="input-label">{t("simulation.individual.endYear")}</label><input {...register("end_year")} type="number" className="input-field" /></div>
+          )}
           <div><label className="input-label">{t("simulation.individual.timezone")}</label>
             <select {...register("timezone")} className="select-field">
               {TIMEZONES.map((tz) => (<option key={tz} value={tz}>{tz}</option>))}
@@ -1122,7 +1126,7 @@ function ModelChainTab(props: TabProps) {
         </button>
       </div>
 
-      {results?.simulation_results && <ModelChainChartSection results={results} />}
+      {results?.simulation_results && <ModelChainChart simulation_results={results.simulation_results} />}
       <ResultsPanel data={results} error={error} isLoading={false} />
     </form>
   );

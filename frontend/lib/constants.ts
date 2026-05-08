@@ -14,6 +14,10 @@ export const AVG_YEAR_STRATEGIES = [
 
 export type AvgYearStrategy = (typeof AVG_YEAR_STRATEGIES)[number]["value"];
 
+// Active strategy used by ModelChain when a non-TMY weather source is selected.
+// Options: "simple_mean" | "trimmed_mean" | "exponential_weighted" | "combined"
+export const DEFAULT_AVG_STRATEGY: AvgYearStrategy = "simple_mean";
+
 // --- Solar Simulation Models ---
 export const SOLAR_MODELS = [
   { value: "instesre_bird", label: "INSTESRE Bird", description: "Bird & Hulstrom (1981) clear-sky model" },

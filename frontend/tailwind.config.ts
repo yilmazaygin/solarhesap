@@ -50,6 +50,9 @@ const config: Config = {
         "pulse-glow": "pulseGlow 3s ease-in-out infinite",
         "spin-slow": "spin 8s linear infinite",
         "orbit": "orbit 6s linear infinite",
+        "orbit-reverse": "orbitReverse 10s linear infinite",
+        "orbit-inner": "orbitInner 9s linear infinite",
+        "orbit-outer": "orbitOuter 13s linear infinite",
       },
       keyframes: {
         fadeIn: {
@@ -65,8 +68,20 @@ const config: Config = {
           "50%": { boxShadow: "0 0 40px rgba(251,191,36,0.3)" },
         },
         orbit: {
-          "0%": { transform: "rotate(0deg) translateX(60px) rotate(0deg)" },
-          "100%": { transform: "rotate(360deg) translateX(60px) rotate(-360deg)" },
+          "0%":   { transform: "rotate(0deg)    translateX(60px) rotate(0deg)"    },
+          "100%": { transform: "rotate(360deg)  translateX(60px) rotate(-360deg)" },
+        },
+        orbitReverse: {
+          "0%":   { transform: "rotate(0deg)    translateX(60px) rotate(0deg)"   },
+          "100%": { transform: "rotate(-360deg) translateX(60px) rotate(360deg)" },
+        },
+        orbitInner: {
+          "0%":   { transform: "rotate(0deg)    translateX(40px) rotate(0deg)"   },
+          "100%": { transform: "rotate(-360deg) translateX(40px) rotate(360deg)" },
+        },
+        orbitOuter: {
+          "0%":   { transform: "rotate(0deg)    translateX(70px) rotate(0deg)"   },
+          "100%": { transform: "rotate(-360deg) translateX(70px) rotate(360deg)" },
         },
       },
       backdropBlur: {

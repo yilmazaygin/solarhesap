@@ -1,4 +1,22 @@
 {
+  "app/estimate/page.tsx -> @/components/simulation/MapPicker": {
+    "id": "app/estimate/page.tsx -> @/components/simulation/MapPicker",
+    "files": [
+      "static/chunks/_app-pages-browser_components_simulation_MapPicker_tsx.js"
+    ]
+  },
+  "app/historical/page.tsx -> @/components/simulation/MapPicker": {
+    "id": "app/historical/page.tsx -> @/components/simulation/MapPicker",
+    "files": [
+      "static/chunks/_app-pages-browser_components_simulation_MapPicker_tsx.js"
+    ]
+  },
+  "app/irradiance/page.tsx -> @/components/simulation/MapPicker": {
+    "id": "app/irradiance/page.tsx -> @/components/simulation/MapPicker",
+    "files": [
+      "static/chunks/_app-pages-browser_components_simulation_MapPicker_tsx.js"
+    ]
+  },
   "components/simulation/MapPicker.tsx -> leaflet": {
     "id": "components/simulation/MapPicker.tsx -> leaflet",
     "files": [

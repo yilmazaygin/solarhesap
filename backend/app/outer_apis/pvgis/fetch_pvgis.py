@@ -64,13 +64,11 @@ def _call_pvgis(func: Callable[..., T], **params: Any) -> T:
             func.__name__, params,
         )
         return func(**params)
-    except (TimeoutError, requests.exceptions.Timeout) as exc:
+    except (requests.exceptions.Timeout, TimeoutError) as exc:
         alogger.warning("PVGIS request timed out: %s", exc)
-        raise  # Tenacity will retry
-    except (ConnectionError, OSError, requests.exceptions.ConnectionError) as exc:
-        alogger.warning("PVGIS connection error (will retry): %s", exc)
-        raise  # Tenacity will retry
+        raise TimeoutError(str(exc)) from exc  # Tenacity will retry
     except requests.exceptions.HTTPError as exc:
+        # Must come before the OSError branch — HTTPError is a subclass of OSError.
         # PVGIS returned an HTTP error (e.g. 500, 503, 400)
         status = getattr(exc.response, "status_code", None)
         if status and 500 <= status < 600:
@@ -80,6 +78,9 @@ def _call_pvgis(func: Callable[..., T], **params: Any) -> T:
         # Client-side error (4xx) — non-retryable
         alogger.error("PVGIS client error %s: %s", status, exc)
         raise ExternalAPIError("PVGIS", str(exc)) from exc
+    except (requests.exceptions.ConnectionError, ConnectionError, OSError) as exc:
+        alogger.warning("PVGIS connection error (will retry): %s", exc)
+        raise  # Tenacity will retry
     except Exception as exc:
         # Non-retryable errors
         alogger.exception("PVGIS request failed (non-retryable)")

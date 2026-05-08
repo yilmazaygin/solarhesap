@@ -1,56 +1,160 @@
-# Solarhesap v0.2: High-Fidelity Solar Irradiance Simulation Engine
+# Solarhesap v0.2
 
-**Solarhesap** is an advanced, service-oriented ecosystem designed for high-fidelity solar irradiance modeling, multi-model data orchestration, and robust photovoltaic (PV) simulations. Funded as a **TÜBİTAK 2209** project, this backend (v0.2) delivers a robust FastAPI application serving pure physical and empirical radiation equations, orchestrating APIs from major climatological institutions, and providing specialized dataset averaging frameworks for researchers.
+**Solarhesap** is a high-fidelity solar irradiance simulation engine and photovoltaic (PV) modeling platform developed as a **TÜBİTAK 2209-A** research project. It combines multiple clear-sky models, multi-year meteorological data pipelines, and a full PVLib ModelChain into a single web application.
 
----
-
-## Technical & Scientific Capabilities
-
-The architecture is split into interconnected systems addressing varying degrees of simulation complexity.
-
-### 1. Robust Clear-Sky Modeling
-Solarhesap reconstructs theoretical irradiance components (GHI, DNI, DHI, POA) via pure physical implementations and robust empirical methodologies under cloudless atmospheric conditions:
-
-* **Strict BIRD Model Implementation**: A foundational implementation based on the Bird & Hulstrom (1981) model, capable of translating astronomical models (Meeus), broadband aerosol transmissions, Rayleigh scattering, ozone absorption, and precipitable water dynamics. It features sub-zero atmospheric twilight protections ensuring continuous computational stability near the terminator.
-* **Integrated Framework Capabilities**: Wraps globally standardized models configured to ingest exact coordinates and multi-year timeframes:
-  * **Ineichen / Perez**: Resolves accurate broadband optical thickness variations using climatological Linke Turbidity factor derivatives.
-  * **Simplified Solis**: Fits atmospheric transmissivity to the sophisticated Solis spectral parameterization using AOD boundary conditions.
-
-### 2. Multi-Year Meteorological Data Aggregation
-The engine establishes stable ETL pipelines from distinct global APIs, projecting decades of historical patterns into simulated time series matching exact boundary conditions.
-
-* **Open-Meteo Archive Synchronization**: Reconstructs localized micro-climatologies dynamically via 8760-hour matrices. Integrates inputs containing localized temperatures, boundary wind gradients, and multi-layer optical depths.
-* **PVGIS Data Aggregation**:
-  * Extrapolates specialized datasets natively including PVGIS **TMY** (Typical Meteorological Year) outputs.
-  * Resolves direct, diffuse and ground-reflected radiation dynamics on slanted surfaces directly mapping **Plane of Array (POA)** constraints alongside topographical horizons.
-
-### 3. Advanced Strategy Compilation ("Average Year" Pipeline)
-Data gathered over massive longitudinal periods (e.g., 2005-2023) are compiled via scientifically standardized compression paradigms to build idealized, synthetic reference years. 
-
-* **Simple Mean Strategy**: Generates naive mathematical aggregations bridging anomalous noise.
-* **Trimmed Mean Strategy**: Purges statistical outliers dynamically using percentile cut-offs (e.g., extracting extreme micro-variations).
-* **Exponential Weighted Strategy**: Projects decaying influence onto historical phenomena, biasing recent shifts in macro-climates (identifying shifting irradiance realities).
-* **Consensus (Super Average Year)**: Formats an aggressively flattened model resolving differences across varying mathematical permutations to formulate isolated "ground truth" datasets.
-
-### 4. Pure Solar Calculation Utilities
-An extensive array of stateless algorithmic calculations handles astronomical geometry down to precise numerical thresholds:
-* **Astronomical Projections & Positionings**: Meeus Julian day configurations, localized solar noon extractions, Extraterrestrial Radiation bounds (ETR), and precise diurnal length determinations.
-* **Radiometric Decompositions & Conversions**: Including dynamic *Erbs Decomposition* mapping global bounds to exact Direct/Diffuse compositions utilizing localized Clearness Indices ($K_T$).
-* **Spatial Optimizations**: Computes optimized, bi-axial orientation limits (Optimal Tilt/Azimuth computations), and handles vector dot cross-product equations addressing structural Angles of Incidence.
+> For server deployment instructions, see [DEPLOY.md](DEPLOY.md).
 
 ---
 
-## Core Technologies & Dependencies
+## Features
 
-* `FastAPI`: High-performance asynchronous framework controlling dependency injunction and schema validation structures.
-* `Pydantic`: Standardized type casting utilizing structured input constraint validations.
-* `uvicorn`: ASGI specification protocol serving endpoints.
+### Simulation Models
+| Model | Description |
+|---|---|
+| **INSTESRE Bird** | Bird & Hulstrom (1981) clear-sky — broadband aerosol, Rayleigh scattering, ozone, precipitable water |
+| **Ineichen / Perez** | Linke Turbidity-based broadband model, auto-loaded from pvlib database |
+| **Simplified Solis** | Atmospheric transmissivity via AOD boundary conditions |
+| **pvlib Bird** | pvlib's own implementation of the Bird model |
+| **PVGIS TMY** | Typical Meteorological Year data from the EU JRC |
+| **PVGIS POA** | Multi-year hourly Plane-of-Array irradiance (SARAH-2 dataset) |
 
-## Scientific Acknowledgements & Citations
+### Average Year Strategies
+Multi-year hourly datasets (e.g. 2005–2023) are compressed into a single synthetic reference year via:
+- **Simple Mean** — naive mathematical aggregation
+- **Trimmed Mean** — percentile cutoffs to remove outlier years
+- **Exponential Weighted** — recent years carry higher weight to reflect climate shifts
+- **Super Average Year** — consensus across all strategies
 
-The strength of Solarhesap revolves through extensive orchestration of highly respected public research ecosystems and data structures. Any project mapping functionality through this service acknowledges the subsequent providers:
+### Solar Tools (15 calculators)
+Julian Day · Solar Position · Sunrise/Sunset · Solar Declination · Airmass (Kasten-Young) · Extraterrestrial Radiation · Dew Point → Precipitable Water · Station Pressure · ISA Pressure · Linke Turbidity · Erbs Decomposition · Angle of Incidence · Optimal Tilt · POA Irradiance · Instant Bird
 
-* **BIRD Model Base Logic**: Bird, R. E., & Hulstrom, R. L. (1981). *A Simplified Clear Sky Model for Direct and Diffuse Insolation on Horizontal Surfaces*. Technical Report SERI/TR-642-761, Solar Energy Research Institute.
-* **PVLIB Framework**: Holmgren, W. F., Hansen, C. W., & Mikofski, M. A. (2018). *pvlib python: a python package for modeling solar energy systems*. Journal of Open Source Software, 3(29), 884.
-* **PVGIS Integration Engine**: Raw solar projections derived from European Commission, Joint Research Centre (JRC) *Photovoltaic Geographical Information System*. 
-* **Open-Meteo Integration Engine**: Zippenfenig, P. (2023). *Open-Meteo.com Weather API*. Seamless historical dataset API serving boundary atmospheric datasets.
+### PVLib ModelChain
+End-to-end PV simulation: weather → clear-sky irradiance → plane-of-array transposition → DC power → AC power. Supports SAPM, CEC, De Soto, PVWatts DC models; Sandia, ADR, PVWatts AC models; and CEC/Sandia module & inverter databases (25 000+ components).
+
+---
+
+## Technology Stack
+
+**Backend:** FastAPI · pvlib · Pydantic · uvicorn · NumPy · pandas · SciPy  
+**Frontend:** Next.js 14 · React · TypeScript · Tailwind CSS · Recharts · Leaflet  
+**Infrastructure:** Docker · Docker Compose · Nginx (rate-limited reverse proxy)
+
+---
+
+## Quick Start (Docker)
+
+### Prerequisites
+- Docker ≥ 24 and Docker Compose V2 installed
+- Port 80 available on the host
+
+### 1. Clone and configure
+
+```bash
+git clone <repo-url>
+cd solarhesap-v0.2
+
+cp backend/.env.example backend/.env
+```
+
+Edit `backend/.env` — at minimum set:
+
+```env
+APP_ENV=production
+ALLOWED_ORIGINS=["https://yourdomain.com"]
+```
+
+### 2. Build and start
+
+```bash
+docker compose up -d --build
+```
+
+| Service | URL |
+|---|---|
+| Application | http://localhost |
+| API Health | http://localhost/api/v1/ (via nginx) |
+
+The API documentation (`/docs`, `/redoc`) is only available when `APP_ENV=development`.
+
+### 3. View logs
+
+```bash
+docker compose logs -f          # all services
+docker compose logs -f backend  # backend only
+```
+
+### 4. Stop
+
+```bash
+docker compose down
+```
+
+---
+
+## Configuration
+
+All runtime configuration lives in `backend/.env` (copy from `.env.example`). The most important production values:
+
+| Variable | Default | Description |
+|---|---|---|
+| `APP_ENV` | `production` | Set to `development` to enable `/docs` |
+| `ALLOWED_ORIGINS` | `[]` | Browser-facing domain(s), e.g. `["https://yourdomain.com"]` |
+| `APP_VERSION` | `v0.2.0` | Shown in API responses |
+
+### Rate Limiting
+
+The Nginx proxy enforces a per-IP request limit. To change it, edit `docker-compose.yml`:
+
+```yaml
+nginx:
+  environment:
+    API_RATE_LIMIT: "60"   # requests per minute per IP
+```
+
+Then apply without rebuilding other services:
+
+```bash
+docker compose up -d --build nginx
+```
+
+---
+
+## Project Structure
+
+```
+solarhesap-v0.2/
+├── backend/               # FastAPI application
+│   ├── app/
+│   │   ├── api/v1/        # Route handlers
+│   │   ├── services/      # Business logic
+│   │   ├── schemas/       # Pydantic models
+│   │   ├── pvlib_tools/   # PVLib wrappers
+│   │   ├── instesre_bird/ # Custom Bird model
+│   │   ├── average_year/  # Avg-year strategies
+│   │   └── outer_apis/    # PVGIS & Open-Meteo clients
+│   ├── .env.example
+│   └── requirements.txt
+├── frontend/              # Next.js application
+├── nginx/                 # Reverse proxy config
+└── docker-compose.yml
+```
+
+---
+
+## Scientific References
+
+- **Bird & Hulstrom (1981).** *A Simplified Clear Sky Model for Direct and Diffuse Insolation on Horizontal Surfaces.* SERI/TR-642-761, Solar Energy Research Institute. — [instesre.org](https://instesre.org/Solar/BirdModelNew.htm)
+
+- **Anderson K., Hansen C., Holmgren W., Jensen A., Mikofski M., Driesse A. (2023).** *pvlib python: 2023 project update.* Journal of Open Source Software, 8(92), 5994. — [DOI: 10.21105/joss.05994](https://doi.org/10.21105/joss.05994)
+
+- **Jensen A., Anderson K., Holmgren W., Mikofski M., Hansen C., Boeman L., Loonen R. (2023).** *Open-source Python functions for seamless access to solar irradiance data.* Solar Energy, 266, 112092. — [DOI: 10.1016/j.solener.2023.112092](https://doi.org/10.1016/j.solener.2023.112092)
+
+- **Holmgren W., Hansen C., Mikofski M. (2018).** *pvlib python: a python package for modeling solar energy systems.* Journal of Open Source Software, 3(29), 884. — [DOI: 10.21105/joss.00884](https://doi.org/10.21105/joss.00884)
+
+- **European Commission, Joint Research Centre.** *Photovoltaic Geographical Information System (PVGIS).* — [JRC PVGIS Portal](https://joint-research-centre.ec.europa.eu/photovoltaic-geographical-information-system-pvgis_en)
+
+- **Zippenfenig P. (2023).** *Open-Meteo.com Weather API.* Seamless historical atmospheric dataset API. — [open-meteo.com](https://open-meteo.com/)
+
+- **Meeus J. (1991).** *Astronomical Algorithms.* Julian Day, Solar Position, Equation of Time, Earth–Sun distance.
+
+- **Spencer J.W. (1971).** Fourier series representation of the position of the sun. *Search*, 2(5), 172. Solar declination calculations.

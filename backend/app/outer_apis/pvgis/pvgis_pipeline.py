@@ -110,8 +110,15 @@ def _hourly_to_pvlib(
     }
     df = df.rename(columns=rename_map)
 
+    # PVGIS doesn't return poa_global directly — compute from components.
+    # pvlib's run_model_from_poa() requires this column.
+    if "poa_global" not in df.columns:
+        poa_components = [c for c in ("poa_direct", "poa_diffuse", "poa_ground_diffuse") if c in df.columns]
+        if poa_components:
+            df["poa_global"] = df[poa_components].sum(axis=1)
+
     # Drop non-pvlib columns
-    for col in ("P", "Int"):
+    for col in ("P", "Int", "solar_elevation"):
         if col in df.columns:
             df = df.drop(columns=[col])
 

@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import {
   Zap, Database, Edit3, ChevronDown, ChevronUp,
-  Plus, Trash2, Play, Search, X, Info,
+  Plus, Trash2, Play, Search, X, Info, RotateCcw,
 } from "lucide-react";
 import GlassCard from "@/components/shared/GlassCard";
 import LoadingOverlay from "@/components/shared/LoadingOverlay";
@@ -12,7 +12,7 @@ import MapPicker from "@/components/simulation/MapPicker";
 import ResultsPanel from "@/components/simulation/ResultsPanel";
 import ModelChainChart from "@/components/charts/ModelChainChart";
 import {
-  SOLAR_MODELS, AVG_YEAR_STRATEGIES, DC_MODELS, AC_MODELS,
+  SOLAR_MODELS, DC_MODELS, AC_MODELS,
   AOI_MODELS, SPECTRAL_MODELS, LOSSES_MODELS, TIMEZONES, DEFAULTS,
   SAM_MODULE_DBS, SAM_INVERTER_DBS, TEMP_MODEL_CONFIGS, TEMP_MODELS,
   DC_MODEL_HINTS, AC_MODEL_HINTS,
@@ -67,6 +67,22 @@ function defaultModuleConfig(): ModuleConfig {
     manual_params_json: '{"pdc0": 250, "gamma_pdc": -0.004}',
   };
 }
+
+const DEFAULT_FLAT_MODULE: ModuleConfig = {
+  source: "database",
+  db_name: "CECMod",
+  module_name: "Canadian_Solar_Inc__CS6K_300MS",
+  module_display: "Canadian Solar CS6K-300MS",
+  manual_params_json: '{"pdc0": 300, "gamma_pdc": -0.004}',
+};
+
+const DEFAULT_INVERTER: InverterConfig = {
+  source: "database",
+  db_name: "CECInverter",
+  inverter_name: "Fronius_USA__IG_Plus_3_0_1_UNI__208V_",
+  inverter_display: "Fronius IG Plus 3.0 UNI",
+  manual_params_json: '{"pdc0": 3000, "eta_inv_nom": 0.96}',
+};
 
 function defaultTempConfig(): TempConfig {
   return {
@@ -154,7 +170,7 @@ function SAMSearch({ db, placeholder, selectedName, selectedDisplay, onSelect, o
   }
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative z-10">
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500 pointer-events-none" />
         <input
@@ -172,7 +188,7 @@ function SAMSearch({ db, placeholder, selectedName, selectedDisplay, onSelect, o
         )}
       </div>
       {open && results.length > 0 && (
-        <div className="absolute z-50 mt-1 w-full max-h-56 overflow-y-auto rounded-xl border border-white/[0.1] bg-slate-900/98 backdrop-blur-xl shadow-xl">
+        <div className="absolute z-[9999] mt-1 w-full max-h-56 overflow-y-auto rounded-xl border border-white/[0.12] bg-slate-900 shadow-2xl">
           {results.map((r) => {
             const name = r.name as string;
             const parts = name.split("_").join(" ").replace(/\s+/g, " ").trim();
@@ -201,7 +217,7 @@ function SAMSearch({ db, placeholder, selectedName, selectedDisplay, onSelect, o
         </div>
       )}
       {open && results.length === 0 && query.length >= 2 && !loading && (
-        <div className="absolute z-50 mt-1 w-full rounded-xl border border-white/[0.1] bg-slate-900/98 p-3 text-xs text-slate-500 text-center">
+        <div className="absolute z-[9999] mt-1 w-full rounded-xl border border-white/[0.12] bg-slate-900 p-3 text-xs text-slate-500 text-center">
           No results for &quot;{query}&quot;
         </div>
       )}
@@ -518,11 +534,11 @@ export default function ModelChainAdvancedPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Location
-  const [lat, setLat] = useState(38.42);
-  const [lng, setLng] = useState(27.14);
-  const [altitude, setAltitude] = useState<string>("50");
+  const [lat, setLat] = useState(38.358);
+  const [lng, setLng] = useState(27.155);
+  const [altitude, setAltitude] = useState<string>("40");
   const [locTz, setLocTz] = useState("Europe/Istanbul");
-  const [locName, setLocName] = useState("");
+  const [locName, setLocName] = useState("DEÜ Fen Fakültesi");
 
   const handleMapChange = useCallback((newLat: number, newLng: number) => {
     setLat(newLat);
@@ -539,7 +555,7 @@ export default function ModelChainAdvancedPage() {
   const [flatStringsPerInverter, setFlatStringsPerInverter] = useState(2);
   const [flatModuleType, setFlatModuleType] = useState("glass_polymer");
   const [flatRackingModel, setFlatRackingModel] = useState("open_rack");
-  const [flatModule, setFlatModule] = useState<ModuleConfig>(defaultModuleConfig());
+  const [flatModule, setFlatModule] = useState<ModuleConfig>(DEFAULT_FLAT_MODULE);
   const [flatTemp, setFlatTemp] = useState<TempConfig>(defaultTempConfig());
 
   // Arrays
@@ -551,13 +567,7 @@ export default function ModelChainAdvancedPage() {
     setPvArrays((prev) => prev.map((a) => (a.id === id ? { ...a, ...patch } : a)));
 
   // Inverter
-  const [inverter, setInverter] = useState<InverterConfig>({
-    source: "database",
-    db_name: "CECInverter",
-    inverter_name: "",
-    inverter_display: "",
-    manual_params_json: '{"pdc0": 5000, "eta_inv_nom": 0.96}',
-  });
+  const [inverter, setInverter] = useState<InverterConfig>(DEFAULT_INVERTER);
 
   // ModelChain config
   const [showMCConfig, setShowMCConfig] = useState(false);
@@ -568,40 +578,86 @@ export default function ModelChainAdvancedPage() {
   const [tempModelOverride, setTempModelOverride] = useState("");
   const [lossesModel, setLossesModel] = useState("no_loss");
 
-  // Auto-suggest dc_model when module DB changes
+  // Auto-suggest dc_model when module DB changes (only when using database source)
   useEffect(() => {
+    if (flatModule.source !== "database") return;
     const db = flatModule.db_name;
     if (DC_MODEL_HINTS[db]) setDcModel(DC_MODEL_HINTS[db]);
-  }, [flatModule.db_name]);
+  }, [flatModule.db_name, flatModule.source]);
 
   useEffect(() => {
+    if (inverter.source !== "database") return;
     const db = inverter.db_name;
     if (AC_MODEL_HINTS[db]) setAcModel(AC_MODEL_HINTS[db]);
-  }, [inverter.db_name]);
+  }, [inverter.db_name, inverter.source]);
 
   // Weather
-  const [weatherSource, setWeatherSource] = useState("ineichen");
-  const [startYear, setStartYear] = useState<number>(DEFAULTS.start_year);
-  const [endYear, setEndYear] = useState<number>(DEFAULTS.end_year);
+  const [weatherSource, setWeatherSource] = useState("pvgis_tmy");
+  const [startDate, setStartDate] = useState("2015-01-01");
+  const [endDate, setEndDate] = useState("2020-12-31");
   const [tz, setTz] = useState("UTC");
-  const [strategies, setStrategies] = useState(["combined"]);
-  const [decay, setDecay] = useState<number>(DEFAULTS.decay);
-  const [lowerPct, setLowerPct] = useState<number>(DEFAULTS.lower_percentile);
-  const [upperPct, setUpperPct] = useState<number>(DEFAULTS.upper_percentile);
+  const [showClearsky, setShowClearsky] = useState(false);
 
-  const toggleStrategy = (s: string) => {
-    if (s === "all") {
-      setStrategies(strategies.includes("all") ? [] : ["all"]);
-    } else {
-      if (strategies.includes("all")) {
-        setStrategies([s]);
-      } else {
-        setStrategies((prev) =>
-          prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]
-        );
-      }
-    }
+  // Clear results whenever weather source changes
+  useEffect(() => {
+    setResults(null);
+    setError(null);
+  }, [weatherSource]);
+
+  // Reset everything to defaults
+  const handleReset = () => {
+    setResults(null);
+    setError(null);
+    setLat(38.358);
+    setLng(27.155);
+    setAltitude("40");
+    setLocTz("Europe/Istanbul");
+    setLocName("DEÜ Fen Fakültesi");
+    setUseArrays(false);
+    setFlatTilt(30);
+    setFlatAzimuth(180);
+    setFlatModulesPerString(10);
+    setFlatStringsPerInverter(2);
+    setFlatModuleType("glass_polymer");
+    setFlatRackingModel("open_rack");
+    setFlatModule(DEFAULT_FLAT_MODULE);
+    setFlatTemp(defaultTempConfig());
+    setPvArrays([defaultArray("1")]);
+    setInverter(DEFAULT_INVERTER);
+    setShowMCConfig(false);
+    setDcModel("cec");
+    setAcModel("sandia");
+    setAoiModel("physical");
+    setSpectralModel("no_loss");
+    setTempModelOverride("");
+    setLossesModel("no_loss");
+    setWeatherSource("pvgis_tmy");
+    setStartDate("2015-01-01");
+    setEndDate("2020-12-31");
+    setTz("UTC");
+    setShowClearsky(false);
   };
+
+  const startYear = parseInt(startDate.substring(0, 4));
+  const endYear = parseInt(endDate.substring(0, 4));
+
+  const CLEARSKY_SOURCES = [
+    { value: "instesre_bird", label: "INSTESRE Bird" },
+    { value: "ineichen", label: "Ineichen / Perez" },
+    { value: "simplified_solis", label: "Simplified Solis" },
+    { value: "pvlib_bird", label: "pvlib Bird" },
+  ];
+
+  const isClearsky = CLEARSKY_SOURCES.some((s) => s.value === weatherSource);
+  const maxEndDate = weatherSource === "pvgis_poa" ? "2023-12-31" : "2025-12-31";
+
+  const dateRangeError = (() => {
+    if (weatherSource === "pvgis_tmy") return null;
+    if (endYear < startYear) return language === "tr" ? "Bitiş tarihi başlangıçtan önce olamaz." : "End date must be after start date.";
+    if (endYear - startYear + 1 > 20) return language === "tr" ? "Maksimum 20 yıl seçilebilir." : "Maximum range is 20 years.";
+    if (weatherSource === "pvgis_poa" && endYear > 2023) return language === "tr" ? "PVGIS SARAH-2 verisi 2023'e kadar mevcut." : "PVGIS SARAH-2 data is available up to 2023.";
+    return null;
+  })();
 
   // Validation helper
   const validate = (): string | null => {
@@ -618,14 +674,14 @@ export default function ModelChainAdvancedPage() {
     }
     if (inverter.source === "database" && !inverter.inverter_name)
       return language === "tr" ? "Evirici seçmediniz." : "No inverter selected.";
-    if (strategies.length === 0)
-      return language === "tr" ? "En az 1 strateji seçin." : "Select at least one strategy.";
     return null;
   };
 
   const handleSubmit = async () => {
     const valErr = validate();
     if (valErr) { setError(valErr); return; }
+
+    if (dateRangeError) { setError(dateRangeError); return; }
 
     setLoading(true);
     setError(null);
@@ -656,10 +712,7 @@ export default function ModelChainAdvancedPage() {
         start_year: startYear,
         end_year: endYear,
         timezone: tz,
-        avg_year_strategies: weatherSource === "pvgis_tmy" ? ["combined"] : strategies,
-        decay,
-        lower_percentile: lowerPct,
-        upper_percentile: upperPct,
+        avg_year_strategies: ["simple_mean"],
         reference_year: 2023,
       };
 
@@ -703,15 +756,26 @@ export default function ModelChainAdvancedPage() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8">
 
         {/* Header */}
-        <div className="mb-8 animate-fade-in">
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2">
-            ModelChain <span className="text-gradient-solar">Advanced</span>
-          </h1>
-          <p className="text-slate-400 max-w-2xl text-sm">
-            {language === "tr"
-              ? "SAM veritabanlarından (CECMod, SandiaMod, CECInverter, ADRInverter) modül/evirici seç, çoklu array konfigürasyonu oluştur ve tam pvlib simülasyonu çalıştır."
-              : "Select modules and inverters from SAM databases, configure multi-array systems, and run a full pvlib ModelChain simulation."}
-          </p>
+        <div className="mb-8 animate-fade-in flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-4xl font-bold tracking-tight mb-2">
+              {language === "tr" ? "Gelişmiş" : "Advanced"} <span className="text-gradient-solar">{language === "tr" ? "Tahmin" : "Forecast"}</span>
+            </h1>
+            <p className="text-slate-400 max-w-2xl text-sm">
+              {language === "tr"
+                ? "SAM veritabanlarından modül/evirici seç, çoklu array konfigürasyonu oluştur ve tam pvlib simülasyonu çalıştır."
+                : "Select modules and inverters from SAM databases, configure multi-array systems, and run a full pvlib ModelChain simulation."}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleReset}
+            className="flex-shrink-0 flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-200 px-3 py-2 rounded-lg border border-white/[0.08] hover:bg-white/[0.05] transition-all mt-1"
+            title={language === "tr" ? "Tüm değerleri sıfırla" : "Reset all values"}
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            {language === "tr" ? "Sıfırla" : "Reset"}
+          </button>
         </div>
 
         <WarningBanner
@@ -1033,74 +1097,92 @@ export default function ModelChainAdvancedPage() {
           {/* ── Weather Source ── */}
           <GlassCard>
             <h2 className="section-heading text-lg mb-4">🌤️ {language === "tr" ? "Hava Verisi Kaynağı" : "Weather Data Source"}</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
-              <div>
-                <label className="input-label">{language === "tr" ? "Kaynak" : "Source"}</label>
-                <select value={weatherSource} onChange={(e) => setWeatherSource(e.target.value)} className="select-field">
-                  {SOLAR_MODELS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
-                </select>
-              </div>
-              {weatherSource !== "pvgis_tmy" && (
-                <>
-                  <div>
-                    <label className="input-label">{language === "tr" ? "Başlangıç Yılı" : "Start Year"}</label>
-                    <input type="number" value={startYear} min={2005} max={2025}
-                      onChange={(e) => setStartYear(parseInt(e.target.value))} className="input-field" />
-                  </div>
-                  <div>
-                    <label className="input-label">{language === "tr" ? "Bitiş Yılı" : "End Year"}</label>
-                    <input type="number" value={endYear} min={2005} max={2025}
-                      onChange={(e) => setEndYear(parseInt(e.target.value))} className="input-field" />
-                  </div>
-                </>
-              )}
-              <div>
-                <label className="input-label">{language === "tr" ? "Zaman Dilimi" : "Timezone"}</label>
-                <select value={tz} onChange={(e) => setTz(e.target.value)} className="select-field">
-                  {TIMEZONES.map((t) => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </div>
+
+            {/* TMY / POA ana seçenekler */}
+            <div className="flex gap-3 mb-4">
+              {[
+                { value: "pvgis_tmy", label: "PVGIS TMY", desc: language === "tr" ? "Tipik Meteorolojik Yıl" : "Typical Meteorological Year" },
+                { value: "pvgis_poa", label: "PVGIS POA", desc: language === "tr" ? "Çok Yıllı Saatlik · SARAH-2" : "Multi-Year Hourly · SARAH-2" },
+              ].map((s) => (
+                <button key={s.value} type="button"
+                  onClick={() => { setWeatherSource(s.value); setShowClearsky(false); }}
+                  className={`flex-1 p-3 rounded-xl border text-left text-sm transition-all ${
+                    weatherSource === s.value && !isClearsky
+                      ? "border-amber-400/40 bg-amber-400/[0.08] text-amber-300"
+                      : "border-white/[0.08] text-slate-400 hover:border-white/[0.15]"
+                  }`}>
+                  <p className="font-semibold">{s.label}</p>
+                  <p className="text-[11px] opacity-70 mt-0.5">{s.desc}</p>
+                </button>
+              ))}
             </div>
 
-            {/* Avg Year Strategies */}
-            {weatherSource !== "pvgis_tmy" && (
-              <div className="border-t border-white/[0.06] pt-4">
-                <h3 className="text-sm font-semibold text-slate-300 mb-3">
-                  📊 {language === "tr" ? "Ortalama Yıl Stratejileri" : "Average Year Strategies"}
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
-                  {AVG_YEAR_STRATEGIES.map((s) => (
-                    <label key={s.value}
-                      className={`flex items-center gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-all ${
-                        strategies.includes(s.value)
-                          ? "border-amber-400/30 bg-amber-400/[0.06]"
-                          : "border-white/[0.06] hover:border-white/[0.12]"
-                      }`}>
-                      <input type="checkbox" checked={strategies.includes(s.value)}
-                        onChange={() => toggleStrategy(s.value)} className="accent-amber-400 w-4 h-4" />
-                      <span className="text-xs font-medium text-slate-200">{s.label}</span>
-                    </label>
-                  ))}
+            {/* Gelişmiş: Clear-Sky toggle */}
+            <button type="button" onClick={() => setShowClearsky((v) => !v)}
+              className="flex items-center gap-2 text-xs text-slate-500 hover:text-slate-300 transition-colors mb-3">
+              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showClearsky ? "rotate-180" : ""}`} />
+              {language === "tr" ? "Gelişmiş: Clear-Sky Modelleri" : "Advanced: Clear-Sky Models"}
+            </button>
+
+            {showClearsky && (
+              <div className="mb-4 space-y-3">
+                <div className="p-3 rounded-xl bg-orange-400/[0.06] border border-orange-400/20 flex gap-2">
+                  <Info className="h-4 w-4 text-orange-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-slate-400">
+                    {language === "tr"
+                      ? "Clear-sky modeller bulutsuz gökyüzü varsayar. Gerçek üretim bu değerlerin çok altında olacaktır."
+                      : "Clear-sky models assume a cloudless sky. Actual production will be significantly lower than these values."}
+                  </p>
                 </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="input-label">{language === "tr" ? "Azalma Faktörü" : "Decay Factor"}</label>
-                    <input type="number" step="0.01" value={decay} min={0.01} max={0.99}
-                      onChange={(e) => setDecay(parseFloat(e.target.value))} className="input-field" />
-                  </div>
-                  <div>
-                    <label className="input-label">{language === "tr" ? "Alt Yüzdelik" : "Lower Percentile"}</label>
-                    <input type="number" value={lowerPct} min={0} max={50}
-                      onChange={(e) => setLowerPct(parseFloat(e.target.value))} className="input-field" />
-                  </div>
-                  <div>
-                    <label className="input-label">{language === "tr" ? "Üst Yüzdelik" : "Upper Percentile"}</label>
-                    <input type="number" value={upperPct} min={50} max={100}
-                      onChange={(e) => setUpperPct(parseFloat(e.target.value))} className="input-field" />
-                  </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {CLEARSKY_SOURCES.map((s) => (
+                    <button key={s.value} type="button"
+                      onClick={() => setWeatherSource(s.value)}
+                      className={`p-2.5 rounded-xl border text-xs text-left transition-all ${
+                        weatherSource === s.value
+                          ? "border-orange-400/40 bg-orange-400/[0.08] text-orange-300"
+                          : "border-white/[0.08] text-slate-400 hover:border-white/[0.15]"
+                      }`}>
+                      <p className="font-semibold">{s.label}</p>
+                    </button>
+                  ))}
                 </div>
               </div>
             )}
+
+            {/* Tarih aralığı (TMY dışı) */}
+            {weatherSource !== "pvgis_tmy" && (
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="input-label">{language === "tr" ? "Başlangıç Tarihi" : "Start Date"}</label>
+                    <input type="date" value={startDate} min="2005-01-01" max="2025-12-31"
+                      onChange={(e) => setStartDate(e.target.value)} className="input-field" />
+                  </div>
+                  <div>
+                    <label className="input-label">
+                      {language === "tr" ? "Bitiş Tarihi" : "End Date"}
+                      {weatherSource === "pvgis_poa" && (
+                        <span className="ml-2 text-[10px] text-amber-400/80">max. 2023</span>
+                      )}
+                    </label>
+                    <input type="date" value={endDate} min="2005-01-01" max={maxEndDate}
+                      onChange={(e) => setEndDate(e.target.value)} className="input-field" />
+                  </div>
+                </div>
+                {dateRangeError && (
+                  <p className="text-xs text-red-400">⚠️ {dateRangeError}</p>
+                )}
+              </div>
+            )}
+
+            {/* Zaman dilimi */}
+            <div className="mt-4">
+              <label className="input-label">{language === "tr" ? "Zaman Dilimi" : "Timezone"}</label>
+              <select value={tz} onChange={(e) => setTz(e.target.value)} className="select-field max-w-xs">
+                {TIMEZONES.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
           </GlassCard>
 
           {/* ── Submit ── */}
@@ -1122,7 +1204,7 @@ export default function ModelChainAdvancedPage() {
           </div>
 
           {/* ── Results ── */}
-          {results && !!(results as Record<string, unknown>).simulation_results && (
+          {results && !!(results as Record<string, unknown>).simulation_results && weatherSource === "pvgis_tmy" && (
             <ModelChainChart
               simulation_results={(results as Record<string, unknown>).simulation_results as Record<string, unknown>}
             />

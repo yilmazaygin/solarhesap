@@ -2,16 +2,19 @@
 
 import { useState, useCallback } from "react";
 import {
-  Download, ChevronDown, ChevronUp, Play,
-  Info, FileJson, FileText, MapPin, Calendar, Hash, Layers,
+  MapPin, Settings, Play, Download,
+  ChevronDown, ChevronUp, Info,
+  FileJson, FileText, Calendar, Hash, Layers,
 } from "lucide-react";
-
-import GlassCard from "@/components/shared/GlassCard";
-import LoadingOverlay from "@/components/shared/LoadingOverlay";
-import MapPicker from "@/components/simulation/MapPicker";
+import dynamic from "next/dynamic";
 import { useLanguage } from "@/context/LanguageContext";
 import { generateIrradiance } from "@/lib/api";
 import { DEFAULTS, TIMEZONES } from "@/lib/constants";
+
+const MapPicker = dynamic(
+  () => import("@/components/simulation/MapPicker"),
+  { ssr: false }
+);
 
 /* ─── Types ──────────────────────────────────────────── */
 
@@ -19,12 +22,9 @@ interface IrradianceRecord {
   datetime?: string;
   day_of_year?: number;
   hour?: number;
-  ghi?: number;
-  dni?: number;
-  dhi?: number;
+  ghi?: number; dni?: number; dhi?: number;
   poa_global?: number;
-  temp_air?: number;
-  wind_speed?: number;
+  temp_air?: number; wind_speed?: number;
   [key: string]: string | number | undefined;
 }
 
@@ -44,58 +44,18 @@ interface IrradianceResult {
 /* ─── Constants ──────────────────────────────────────── */
 
 const MODELS = [
-  { value: "instesre_bird", label: "INSTESRE Bird", desc: "Bird & Hulstrom (1981) — OpenMeteo atmosphere" },
-  { value: "ineichen", label: "Ineichen / Perez", desc: "Auto Linke turbidity — OpenMeteo atmosphere" },
-  { value: "simplified_solis", label: "Simplified Solis", desc: "Atmospheric transmissivity via AOD" },
-  { value: "pvlib_bird", label: "pvlib Bird", desc: "pvlib implementation of Bird model" },
-  { value: "pvgis_tmy", label: "PVGIS TMY", desc: "Typical Meteorological Year — always 1 year" },
-  { value: "pvgis_poa", label: "PVGIS POA", desc: "Multi-year hourly plane-of-array (SARAH2, max 2023)" },
+  { value: "instesre_bird",    label: "INSTESRE Bird",      desc: "Bird & Hulstrom (1981)" },
+  { value: "ineichen",         label: "Ineichen / Perez",   desc: "Auto Linke turbidity" },
+  { value: "simplified_solis", label: "Simplified Solis",   desc: "Atmospheric transmissivity" },
+  { value: "pvlib_bird",       label: "pvlib Bird",         desc: "pvlib Bird model" },
+  { value: "pvgis_tmy",        label: "PVGIS TMY",          desc: "Typical Met. Year" },
+  { value: "pvgis_poa",        label: "PVGIS POA",          desc: "Multi-year plane-of-array" },
 ] as const;
 
-/* ─── Download helpers ───────────────────────────────── */
-
-function triggerDownload(content: string, filename: string, mime: string) {
-  const blob = new Blob([content], { type: mime });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-function recordsToCSV(records: IrradianceRecord[]): string {
-  if (!records.length) return "";
-  const keys = Object.keys(records[0]);
-  const header = keys.join(",");
-  const rows = records.map((r) =>
-    keys.map((k) => {
-      const v = r[k];
-      return v === undefined || v === null ? "" : String(v);
-    }).join(",")
-  );
-  return [header, ...rows].join("\n");
-}
-
-function buildFilename(result: IrradianceResult, suffix: string, ext: string): string {
-  const loc = `${result.location.latitude.toFixed(2)}N_${result.location.longitude.toFixed(2)}E`;
-  const range = result.year_range
-    ? `${result.year_range.start_year}-${result.year_range.end_year}`
-    : "tmy";
-  return `irradiance_${result.model}_${loc}_${range}${suffix}.${ext}`;
-}
-
-/* ─── Results Summary ────────────────────────────────── */
-
 const MODEL_LABELS: Record<string, string> = {
-  instesre_bird: "INSTESRE Bird",
-  ineichen: "Ineichen / Perez",
-  simplified_solis: "Simplified Solis",
-  pvlib_bird: "pvlib Bird",
-  pvgis_tmy: "PVGIS TMY",
-  pvgis_poa: "PVGIS POA",
+  instesre_bird: "INSTESRE Bird", ineichen: "Ineichen / Perez",
+  simplified_solis: "Simplified Solis", pvlib_bird: "pvlib Bird",
+  pvgis_tmy: "PVGIS TMY", pvgis_poa: "PVGIS POA",
 };
 
 const COL_LABELS: Record<string, string> = {
@@ -109,149 +69,54 @@ function colLabel(col: string) {
   return COL_LABELS[col] ?? col.replace(/_/g, " ").toUpperCase();
 }
 
-function ResultsSummary({ result, language }: { result: IrradianceResult; language: string }) {
-  const summaryEntries = Object.entries(result.summary);
+/* ─── Helpers ────────────────────────────────────────── */
 
-  // Group: annual entries first, then peak
-  const annual = summaryEntries.filter(([k]) => k.startsWith("annual_"));
-  const peak = summaryEntries.filter(([k]) => k.startsWith("peak_"));
+function triggerDownload(content: string, filename: string, mime: string) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 
-  const rangeLabel = result.is_tmy
-    ? "TMY"
-    : result.year_range
-    ? `${result.year_range.start_year} – ${result.year_range.end_year}`
-    : "—";
+function recordsToCSV(records: IrradianceRecord[]): string {
+  if (!records.length) return "";
+  const keys = Object.keys(records[0]);
+  return [keys.join(","), ...records.map((r) =>
+    keys.map((k) => { const v = r[k]; return v === undefined || v === null ? "" : String(v); }).join(",")
+  )].join("\n");
+}
 
-  return (
-    <GlassCard>
-      {/* ── Header ── */}
-      <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
-        <div>
-          <h2 className="section-heading text-lg mb-1">
-            📊 {language === "tr" ? "Veri Özeti" : "Data Summary"}
-          </h2>
-          <p className="text-xs text-slate-500">
-            {MODEL_LABELS[result.model] ?? result.model}
-          </p>
-        </div>
-        {result.is_tmy && (
-          <div className="flex flex-wrap gap-1.5">
-            <span className="text-[11px] px-2.5 py-1 rounded-full border border-amber-400/30 text-amber-400 bg-amber-400/[0.06] font-medium">
-              TMY
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* ── Meta row ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5 pb-5 border-b border-white/[0.06]">
-        <div className="flex items-center gap-2">
-          <MapPin className="h-3.5 w-3.5 text-slate-500 flex-shrink-0" />
-          <div>
-            <p className="text-[10px] text-slate-500">{language === "tr" ? "Konum" : "Location"}</p>
-            <p className="text-xs font-semibold text-slate-200">
-              {result.location.latitude.toFixed(3)}°, {result.location.longitude.toFixed(3)}°
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Layers className="h-3.5 w-3.5 text-slate-500 flex-shrink-0" />
-          <div>
-            <p className="text-[10px] text-slate-500">{language === "tr" ? "Yükseklik" : "Elevation"}</p>
-            <p className="text-xs font-semibold text-slate-200">{result.location.elevation} m</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Calendar className="h-3.5 w-3.5 text-slate-500 flex-shrink-0" />
-          <div>
-            <p className="text-[10px] text-slate-500">{language === "tr" ? "Zaman Aralığı" : "Period"}</p>
-            <p className="text-xs font-semibold text-slate-200">{rangeLabel}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Hash className="h-3.5 w-3.5 text-slate-500 flex-shrink-0" />
-          <div>
-            <p className="text-[10px] text-slate-500">{language === "tr" ? "Satır Sayısı" : "Total Rows"}</p>
-            <p className="text-xs font-semibold text-slate-200">{result.total_rows.toLocaleString()}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Stats ── */}
-      {summaryEntries.length === 0 ? (
-        <p className="text-sm text-slate-500 italic">
-          {language === "tr" ? "Bu model için ışınım özeti mevcut değil." : "No irradiance summary available for this dataset."}
-        </p>
-      ) : (
-        <div className="space-y-4">
-          {/* Annual totals */}
-          {annual.length > 0 && (
-            <div>
-              <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-2">
-                {language === "tr" ? "Yıllık Toplam" : "Annual Total"}
-              </p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {annual.map(([key, val]) => {
-                  const col = key.replace("annual_", "").replace("_kwh_m2", "");
-                  return (
-                    <div key={key} className="p-3.5 rounded-xl border border-amber-400/20 bg-amber-400/[0.04]">
-                      <p className="text-[10px] text-amber-400/70 font-medium mb-1">{colLabel(col)}</p>
-                      <p className="text-2xl font-bold tabular-nums text-amber-400 leading-none">
-                        {val.toLocaleString(undefined, { maximumFractionDigits: 1 })}
-                      </p>
-                      <p className="text-[10px] text-slate-500 mt-1">kWh / m²</p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Peak values */}
-          {peak.length > 0 && (
-            <div>
-              <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-2">
-                {language === "tr" ? "Tepe Değer" : "Peak Value"}
-              </p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {peak.map(([key, val]) => {
-                  const col = key.replace("peak_", "").replace("_w_m2", "");
-                  return (
-                    <div key={key} className="p-3.5 rounded-xl border border-white/[0.06] bg-white/[0.02]">
-                      <p className="text-[10px] text-slate-500 font-medium mb-1">{colLabel(col)}</p>
-                      <p className="text-2xl font-bold tabular-nums text-slate-200 leading-none">
-                        {val.toLocaleString(undefined, { maximumFractionDigits: 1 })}
-                      </p>
-                      <p className="text-[10px] text-slate-500 mt-1">W / m²</p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </GlassCard>
-  );
+function buildFilename(result: IrradianceResult, suffix: string, ext: string): string {
+  const loc = `${result.location.latitude.toFixed(2)}N_${result.location.longitude.toFixed(2)}E`;
+  const range = result.year_range ? `${result.year_range.start_year}-${result.year_range.end_year}` : "tmy";
+  return `irradiance_${result.model}_${loc}_${range}${suffix}.${ext}`;
 }
 
 /* ─── Main Page ──────────────────────────────────────── */
 
 export default function IrradiancePage() {
   const { language } = useLanguage();
+  const tr = (en: string, trStr: string) => language === "tr" ? trStr : en;
 
-  // Location
+  /* ── Location ── */
   const [lat, setLat] = useState(38.42);
   const [lng, setLng] = useState(27.14);
   const [elevation, setElevation] = useState("50");
   const [tz, setTz] = useState("Europe/Istanbul");
 
-  // Model & time
+  const handleMapChange = useCallback((newLat: number, newLng: number) => {
+    setLat(newLat); setLng(newLng);
+  }, []);
+
+  /* ── Model & time ── */
   const [model, setModel] = useState("ineichen");
   const [startYear, setStartYear] = useState<number>(DEFAULTS.start_year);
   const [endYear, setEndYear] = useState<number>(DEFAULTS.end_year);
 
-  // Advanced params (collapsible)
+  /* ── Advanced params ── */
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [ozone, setOzone] = useState<number>(DEFAULTS.ozone);
   const [aod500, setAod500] = useState<number>(DEFAULTS.aod500);
@@ -262,7 +127,7 @@ export default function IrradiancePage() {
   const [surfaceTilt, setSurfaceTilt] = useState<number>(DEFAULTS.surface_tilt);
   const [surfaceAzimuth, setSurfaceAzimuth] = useState<number>(DEFAULTS.surface_azimuth);
 
-  // State
+  /* ── State ── */
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<IrradianceResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -271,401 +136,386 @@ export default function IrradiancePage() {
   const isPoa = model === "pvgis_poa";
   const isBird = model === "instesre_bird" || model === "pvlib_bird";
   const isSolis = model === "simplified_solis";
-  const yearCount = endYear - startYear + 1;
-
-  const handleMapChange = useCallback(
-    (newLat: number, newLng: number) => {
-      setLat(newLat);
-      setLng(newLng);
-    },
-    []
-  );
+  const hasAdvanced = isBird || isSolis || isPoa;
 
   const handleGenerate = async () => {
-    setError(null);
-    setResult(null);
-    setLoading(true);
-
+    setError(null); setResult(null); setLoading(true);
     const payload: Record<string, unknown> = {
-      model,
-      latitude: lat,
-      longitude: lng,
-      elevation: parseFloat(elevation) || 0,
-      timezone: tz,
+      model, latitude: lat, longitude: lng,
+      elevation: parseFloat(elevation) || 0, timezone: tz,
     };
-
-    if (!isTmy) {
-      payload.start_year = startYear;
-      payload.end_year = endYear;
-    }
-
+    if (!isTmy) { payload.start_year = startYear; payload.end_year = endYear; }
     if (isBird) {
       Object.assign(payload, { ozone, aod500, aod380, albedo, asymmetry });
       if (model === "instesre_bird") payload.solar_constant = 1367.0;
     }
     if (isSolis) payload.aod700 = aod700;
-    if (isPoa) {
-      Object.assign(payload, {
-        surface_tilt: surfaceTilt,
-        surface_azimuth: surfaceAzimuth,
-      });
-    }
-
+    if (isPoa) Object.assign(payload, { surface_tilt: surfaceTilt, surface_azimuth: surfaceAzimuth });
     try {
       const data = await generateIrradiance(payload) as IrradianceResult;
       setResult(data);
+      setTimeout(() => {
+        document.getElementById("irr-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
-  // Download handlers
-  const downloadCSV = () => {
-    if (!result) return;
-    triggerDownload(
-      recordsToCSV(result.records),
-      buildFilename(result, "", "csv"),
-      "text/csv"
-    );
-  };
-
-  const downloadSimplifiedCSV = () => {
-    if (!result?.records_simplified) return;
-    triggerDownload(
-      recordsToCSV(result.records_simplified),
-      buildFilename(result, "_simplified_day_hour", "csv"),
-      "text/csv"
-    );
-  };
-
-  const downloadJSON = () => {
-    if (!result) return;
-    triggerDownload(
-      JSON.stringify({ ...result, records: result.records }, null, 2),
-      buildFilename(result, "", "json"),
-      "application/json"
-    );
-  };
+  const downloadCSV = () => { if (!result) return; triggerDownload(recordsToCSV(result.records), buildFilename(result, "", "csv"), "text/csv"); };
+  const downloadSimplifiedCSV = () => { if (!result?.records_simplified) return; triggerDownload(recordsToCSV(result.records_simplified), buildFilename(result, "_simplified_day_hour", "csv"), "text/csv"); };
+  const downloadJSON = () => { if (!result) return; triggerDownload(JSON.stringify({ ...result }, null, 2), buildFilename(result, "", "json"), "application/json"); };
 
   return (
-    <div className="min-h-screen bg-mesh">
-      <LoadingOverlay
-        visible={loading}
-        message={
-          language === "tr"
-            ? `Ham veri üretiliyor… ${isTmy ? "TMY getiriliyor" : `${startYear}–${endYear} hesaplanıyor`}`
-            : `Generating raw data… ${isTmy ? "Fetching TMY" : `Computing ${startYear}–${endYear}`}`
-        }
-      />
+    <div className="min-h-screen pt-16 pb-16">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-6">
 
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8 animate-fade-in">
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2">
-            <span className="text-gradient-solar">
-              {language === "tr" ? "Irradiance" : "Irradiance"}
-            </span>{" "}
-            <span className="text-slate-200">
-              {language === "tr" ? "Üretici" : "Generator"}
-            </span>
-          </h1>
-          <p className="text-slate-400 max-w-2xl text-sm">
-            {language === "tr"
-              ? "Ham saatlik ışınım verisi üretin. Ortalama yıl stratejisi uygulanmaz — doğrudan ham zaman serisi."
-              : "Generate raw hourly irradiance timeseries. No averaging strategy applied — pure raw data."}
-          </p>
-        </div>
+        {/* ════ Top section: Map + Params ════ */}
+        <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-5">
 
-        <div className="space-y-5 animate-slide-up">
-          {/* ── Location ── */}
-          <GlassCard>
-            <h2 className="section-heading text-lg mb-4">
-              📍 {language === "tr" ? "Konum" : "Location"}
-            </h2>
-            <MapPicker latitude={lat} longitude={lng} onLocationChange={handleMapChange} />
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
-              <div>
-                <label className="input-label">{language === "tr" ? "Enlem" : "Latitude"}</label>
-                <input type="number" step="any" value={lat}
-                  onChange={(e) => setLat(parseFloat(e.target.value))} className="input-field" />
+          {/* ── Left: Map ── */}
+          <div className="glass-card p-0 overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06]">
+              <MapPin className="h-4 w-4 text-amber-400" />
+              <h2 className="text-sm font-semibold text-slate-200">{tr("Location", "Konum Seçimi")}</h2>
+            </div>
+            <MapPicker latitude={lat} longitude={lng} onLocationChange={handleMapChange} height={430} />
+            <div className="px-4 py-2.5 border-t border-white/[0.06] flex items-center gap-3 text-xs text-slate-500">
+              <MapPin className="h-3 w-3 text-amber-400 flex-shrink-0" />
+              {lat !== 38.42 || lng !== 27.14
+                ? <span className="font-mono">{lat.toFixed(4)}°{lat >= 0 ? "K" : "G"}, {lng.toFixed(4)}°{lng >= 0 ? "D" : "B"}</span>
+                : <span>{tr("Click the map to select coordinates", "Haritaya tıklayarak konum seçin")}</span>
+              }
+            </div>
+          </div>
+
+          {/* ── Right: Params panel ── */}
+          <div className="glass-card p-0 overflow-hidden flex flex-col">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06]">
+              <Settings className="h-4 w-4 text-amber-400" />
+              <h2 className="text-sm font-semibold text-slate-200">{tr("Irradiance Parameters", "Işınım Parametreleri")}</h2>
+            </div>
+
+            <div className="flex-1 flex flex-col gap-4 p-4 overflow-y-auto">
+
+              {/* Lat / Lng */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="flex items-center gap-1 text-[11px] text-slate-500 uppercase tracking-wider mb-1.5">
+                    <MapPin className="h-3 w-3 text-amber-400" />{tr("Latitude (°)", "Enlem (°)")}
+                  </label>
+                  <input type="number" step="any" value={lat}
+                    onChange={(e) => setLat(parseFloat(e.target.value))}
+                    className="input-field py-2.5 text-sm" />
+                </div>
+                <div>
+                  <label className="flex items-center gap-1 text-[11px] text-slate-500 uppercase tracking-wider mb-1.5">
+                    <MapPin className="h-3 w-3 text-amber-400" />{tr("Longitude (°)", "Boylam (°)")}
+                  </label>
+                  <input type="number" step="any" value={lng}
+                    onChange={(e) => setLng(parseFloat(e.target.value))}
+                    className="input-field py-2.5 text-sm" />
+                </div>
               </div>
-              <div>
-                <label className="input-label">{language === "tr" ? "Boylam" : "Longitude"}</label>
-                <input type="number" step="any" value={lng}
-                  onChange={(e) => setLng(parseFloat(e.target.value))} className="input-field" />
+
+              {/* Elevation + Timezone */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] text-slate-500 uppercase tracking-wider mb-1.5">
+                    {tr("Elevation (m)", "Yükseklik (m)")}
+                  </label>
+                  <input type="number" value={elevation}
+                    onChange={(e) => setElevation(e.target.value)}
+                    className="input-field py-2.5 text-sm" />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-slate-500 uppercase tracking-wider mb-1.5">
+                    {tr("Timezone", "Zaman Dilimi")}
+                  </label>
+                  <select value={tz} onChange={(e) => setTz(e.target.value)} className="select-field py-2.5 text-sm">
+                    {TIMEZONES.map((t) => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
               </div>
+
+              {/* Model */}
               <div>
-                <label className="input-label">{language === "tr" ? "Yükseklik (m)" : "Elevation (m)"}</label>
-                <input type="number" value={elevation}
-                  onChange={(e) => setElevation(e.target.value)} className="input-field" />
-              </div>
-              <div>
-                <label className="input-label">{language === "tr" ? "Zaman Dilimi" : "Timezone"}</label>
-                <select value={tz} onChange={(e) => setTz(e.target.value)} className="select-field">
-                  {TIMEZONES.map((t) => <option key={t} value={t}>{t}</option>)}
+                <label className="block text-[11px] text-slate-500 uppercase tracking-wider mb-1.5">
+                  {tr("Irradiance Model", "Işınım Modeli")}
+                </label>
+                <select value={model} onChange={(e) => setModel(e.target.value)} className="select-field py-2.5 text-sm">
+                  {MODELS.map((m) => (
+                    <option key={m.value} value={m.value}>{m.label}</option>
+                  ))}
                 </select>
-              </div>
-            </div>
-          </GlassCard>
-
-          {/* ── Model & Time Range ── */}
-          <GlassCard>
-            <h2 className="section-heading text-lg mb-4">
-              ☀️ {language === "tr" ? "Model & Zaman Aralığı" : "Model & Time Range"}
-            </h2>
-
-            {/* Model cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
-              {MODELS.map((m) => (
-                <button
-                  key={m.value}
-                  type="button"
-                  onClick={() => setModel(m.value)}
-                  className={`p-3 rounded-xl border text-left transition-all duration-200 ${
-                    model === m.value
-                      ? "border-amber-400/40 bg-amber-400/[0.08]"
-                      : "border-white/[0.06] hover:border-white/[0.15] bg-white/[0.01]"
-                  }`}
-                >
-                  <p className={`text-sm font-semibold mb-0.5 ${model === m.value ? "text-amber-300" : "text-slate-200"}`}>
-                    {m.label}
-                  </p>
-                  <p className="text-[10px] text-slate-500 leading-tight">{m.desc}</p>
-                </button>
-              ))}
-            </div>
-
-            {/* Year range (hidden for TMY) */}
-            {!isTmy && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="input-label">
-                    {language === "tr" ? "Başlangıç Yılı" : "Start Year"}
-                  </label>
-                  <input type="number" value={startYear} min={2005} max={2025}
-                    onChange={(e) => setStartYear(parseInt(e.target.value))} className="input-field" />
-                </div>
-                <div>
-                  <label className="input-label">
-                    {language === "tr" ? "Bitiş Yılı" : "End Year"}
-                    {isPoa && <span className="ml-1 text-[10px] text-slate-500">(max 2023)</span>}
-                  </label>
-                  <input type="number" value={endYear} min={2005}
-                    max={isPoa ? 2023 : 2025}
-                    onChange={(e) => setEndYear(parseInt(e.target.value))} className="input-field" />
-                </div>
-                <div className="flex items-end">
-                  <div className="p-2.5 rounded-xl border border-white/[0.06] bg-white/[0.02] w-full">
-                    <p className="text-[10px] text-slate-500">
-                      {language === "tr" ? "Toplam süre" : "Total span"}
-                    </p>
-                    <p className="text-sm font-bold text-amber-400">
-                      {endYear >= startYear ? `${endYear - startYear + 1} ${language === "tr" ? "yıl" : "yr"}` : "—"}
-                    </p>
-                    <p className="text-[10px] text-slate-500 mt-0.5">
-                      {`↓ ${language === "tr" ? "özet + indirme" : "summary + download"}`}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {isTmy && (
-              <div className="p-3 rounded-xl bg-blue-400/[0.06] border border-blue-400/20 flex gap-2">
-                <Info className="h-4 w-4 text-blue-400 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-slate-400">
-                  {language === "tr"
-                    ? "TMY her zaman tek bir temsili yıldır. İki indirme formatı sunulur: tam zaman indeksli ve sadeleştirilmiş (yıl çıkarılmış, gün_yılı + saat)."
-                    : "TMY is always a single representative year. Two download formats: full datetime index and simplified (year stripped — day_of_year + hour)."}
+                <p className="text-[10px] text-slate-600 mt-1">
+                  {MODELS.find((m) => m.value === model)?.desc}
                 </p>
               </div>
-            )}
-          </GlassCard>
 
-          {/* ── Advanced Parameters ── */}
-          {(isBird || isSolis || isPoa) && (
-            <GlassCard>
-              <button
-                type="button"
-                className="flex items-center justify-between w-full"
-                onClick={() => setShowAdvanced(!showAdvanced)}
-              >
-                <h2 className="section-heading text-lg">
-                  ⚗️ {language === "tr" ? "Gelişmiş Parametreler" : "Advanced Parameters"}
-                </h2>
-                {showAdvanced
-                  ? <ChevronUp className="h-5 w-5 text-slate-400" />
-                  : <ChevronDown className="h-5 w-5 text-slate-400" />}
-              </button>
+              {/* Year range (hidden for TMY) */}
+              {!isTmy && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] text-slate-500 uppercase tracking-wider mb-1.5">
+                      {tr("Start Year", "Başlangıç Yılı")}
+                    </label>
+                    <input type="number" value={startYear} min={2005} max={2025}
+                      onChange={(e) => setStartYear(parseInt(e.target.value))}
+                      className="input-field py-2.5 text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-slate-500 uppercase tracking-wider mb-1.5">
+                      {tr("End Year", "Bitiş Yılı")}
+                      {isPoa && <span className="ml-1 text-slate-600">(max 2023)</span>}
+                    </label>
+                    <input type="number" value={endYear} min={2005} max={isPoa ? 2023 : 2025}
+                      onChange={(e) => setEndYear(parseInt(e.target.value))}
+                      className="input-field py-2.5 text-sm" />
+                  </div>
+                </div>
+              )}
 
-              {showAdvanced && (
-                <div className="mt-4 animate-fade-in">
-                  {isBird && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                      <div>
-                        <label className="input-label">Ozone (atm-cm)</label>
-                        <input type="number" step="0.01" value={ozone}
-                          onChange={(e) => setOzone(parseFloat(e.target.value))} className="input-field" />
-                      </div>
-                      <div>
-                        <label className="input-label">AOD 500 nm</label>
-                        <input type="number" step="0.01" value={aod500}
-                          onChange={(e) => setAod500(parseFloat(e.target.value))} className="input-field" />
-                      </div>
-                      <div>
-                        <label className="input-label">AOD 380 nm</label>
-                        <input type="number" step="0.01" value={aod380}
-                          onChange={(e) => setAod380(parseFloat(e.target.value))} className="input-field" />
-                      </div>
-                      <div>
-                        <label className="input-label">Albedo</label>
-                        <input type="number" step="0.01" value={albedo}
-                          onChange={(e) => setAlbedo(parseFloat(e.target.value))} className="input-field" />
-                      </div>
-                      {model === "pvlib_bird" && (
+              {/* TMY info */}
+              {isTmy && (
+                <div className="flex items-start gap-2 p-3 rounded-xl bg-sky-400/[0.06] border border-sky-400/20">
+                  <Info className="h-4 w-4 text-sky-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-slate-400">
+                    {tr(
+                      "TMY is always a single representative year. Two download formats available.",
+                      "TMY her zaman tek bir temsili yıldır. İki indirme formatı sunulur.",
+                    )}
+                  </p>
+                </div>
+              )}
+
+              {/* Advanced params (Bird, Solis, POA) */}
+              {hasAdvanced && (
+                <div className="border-t border-white/[0.06] pt-3">
+                  <button type="button" onClick={() => setShowAdvanced(!showAdvanced)}
+                    className="flex items-center justify-between w-full mb-3">
+                    <span className="text-xs font-semibold text-slate-400">
+                      {tr("Advanced Parameters", "Gelişmiş Parametreler")}
+                    </span>
+                    {showAdvanced ? <ChevronUp className="h-3.5 w-3.5 text-slate-500" /> : <ChevronDown className="h-3.5 w-3.5 text-slate-500" />}
+                  </button>
+
+                  {showAdvanced && (
+                    <div className="space-y-3">
+                      {isBird && (
+                        <div className="grid grid-cols-2 gap-3">
+                          {[
+                            { label: "Ozone (atm-cm)", value: ozone, set: setOzone, step: 0.01 },
+                            { label: "AOD 500 nm", value: aod500, set: setAod500, step: 0.01 },
+                            { label: "AOD 380 nm", value: aod380, set: setAod380, step: 0.01 },
+                            { label: "Albedo", value: albedo, set: setAlbedo, step: 0.01 },
+                            ...(model === "pvlib_bird" ? [{ label: "Asymmetry", value: asymmetry, set: setAsymmetry, step: 0.01 }] : []),
+                          ].map(({ label, value, set, step }) => (
+                            <div key={label}>
+                              <label className="block text-[10px] text-slate-500 uppercase tracking-wider mb-1">{label}</label>
+                              <input type="number" step={step} value={value}
+                                onChange={(e) => set(parseFloat(e.target.value))}
+                                className="input-field py-2 text-sm" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {isSolis && (
                         <div>
-                          <label className="input-label">Asymmetry</label>
-                          <input type="number" step="0.01" value={asymmetry}
-                            onChange={(e) => setAsymmetry(parseFloat(e.target.value))} className="input-field" />
+                          <label className="block text-[10px] text-slate-500 uppercase tracking-wider mb-1">AOD 700 nm</label>
+                          <input type="number" step={0.01} value={aod700}
+                            onChange={(e) => setAod700(parseFloat(e.target.value))}
+                            className="input-field py-2 text-sm" />
+                        </div>
+                      )}
+                      {isPoa && (
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-[10px] text-slate-500 uppercase tracking-wider mb-1">
+                              {tr("Panel Tilt (°)", "Panel Eğimi (°)")}
+                            </label>
+                            <input type="number" value={surfaceTilt} min={0} max={90}
+                              onChange={(e) => setSurfaceTilt(parseFloat(e.target.value))}
+                              className="input-field py-2 text-sm" />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] text-slate-500 uppercase tracking-wider mb-1">
+                              {tr("Azimuth (°)", "Azimut (°)")}
+                            </label>
+                            <input type="number" value={surfaceAzimuth} min={0} max={359}
+                              onChange={(e) => setSurfaceAzimuth(parseFloat(e.target.value))}
+                              className="input-field py-2 text-sm" />
+                          </div>
                         </div>
                       )}
                     </div>
                   )}
-
-                  {isSolis && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="input-label">AOD 700 nm</label>
-                        <input type="number" step="0.01" value={aod700}
-                          onChange={(e) => setAod700(parseFloat(e.target.value))} className="input-field" />
-                      </div>
-                    </div>
-                  )}
-
-                  {isPoa && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="input-label">
-                          {language === "tr" ? "Panel Eğimi (°)" : "Panel Tilt (°)"}
-                        </label>
-                        <input type="number" value={surfaceTilt} min={0} max={90}
-                          onChange={(e) => setSurfaceTilt(parseFloat(e.target.value))} className="input-field" />
-                      </div>
-                      <div>
-                        <label className="input-label">
-                          {language === "tr" ? "Panel Azimut (°)" : "Panel Azimuth (°)"}
-                        </label>
-                        <input type="number" value={surfaceAzimuth} min={0} max={359}
-                          onChange={(e) => setSurfaceAzimuth(parseFloat(e.target.value))} className="input-field" />
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
-            </GlassCard>
-          )}
 
-          {/* ── Generate Button ── */}
-          {error && (
-            <div className="p-4 rounded-xl border border-red-400/30 bg-red-400/[0.06] text-sm text-red-300">
-              ⚠️ {error}
+              <div className="flex-1" />
+
+              {/* Error */}
+              {error && (
+                <div className="p-3 rounded-xl border border-red-400/30 bg-red-400/[0.06] text-xs text-red-300">
+                  ⚠️ {error}
+                </div>
+              )}
+
+              {/* Generate button */}
+              <button type="button" onClick={handleGenerate} disabled={loading}
+                className="btn-primary w-full py-3 disabled:opacity-50">
+                {loading
+                  ? <><span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      {tr("Generating…", "Üretiliyor…")}</>
+                  : <><Play className="h-4 w-4" />{tr("Generate Data", "Veri Üret")}</>
+                }
+              </button>
+
+              <p className="text-[10px] text-slate-600 text-center">
+                {!isTmy && endYear >= startYear ? `${endYear - startYear + 1} ${tr("year(s)", "yıl")} · ` : ""}
+                {tr("raw hourly timeseries", "ham saatlik zaman serisi")}
+              </p>
             </div>
-          )}
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={handleGenerate}
-              disabled={loading}
-              className="btn-primary text-base px-8 py-3.5 flex items-center gap-2 disabled:opacity-50"
-            >
-              <Play className="h-4 w-4" />
-              {language === "tr" ? "Veri Üret" : "Generate Data"}
-            </button>
           </div>
-
-          {/* ── Results ── */}
-          {result && (
-            <div className="space-y-5">
-              {/* Summary */}
-              <ResultsSummary result={result} language={language} />
-
-              {/* Downloads */}
-              <GlassCard>
-                <div className="flex items-center gap-2 mb-4">
-                  <Download className="h-5 w-5 text-amber-400" />
-                  <h2 className="section-heading text-lg">
-                    {language === "tr" ? "İndir" : "Download"}
-                  </h2>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* Primary CSV */}
-                  <button
-                    type="button"
-                    onClick={downloadCSV}
-                    className="flex items-center gap-3 p-4 rounded-xl border border-white/[0.08] hover:border-amber-400/30 bg-white/[0.02] hover:bg-amber-400/[0.04] transition-all text-left"
-                  >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-400/10">
-                      <FileText className="h-5 w-5 text-emerald-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-200">
-                        {language === "tr" ? "CSV İndir" : "Download CSV"}
-                      </p>
-                      <p className="text-[10px] text-slate-500 font-mono mt-0.5 truncate">
-                        {buildFilename(result, "", "csv")}
-                      </p>
-                    </div>
-                  </button>
-
-                  {/* JSON */}
-                  <button
-                    type="button"
-                    onClick={downloadJSON}
-                    className="flex items-center gap-3 p-4 rounded-xl border border-white/[0.08] hover:border-amber-400/30 bg-white/[0.02] hover:bg-amber-400/[0.04] transition-all text-left"
-                  >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-400/10">
-                      <FileJson className="h-5 w-5 text-blue-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-200">
-                        {language === "tr" ? "JSON İndir" : "Download JSON"}
-                      </p>
-                      <p className="text-[10px] text-slate-500 font-mono mt-0.5 truncate">
-                        {buildFilename(result, "", "json")}
-                      </p>
-                    </div>
-                  </button>
-
-                  {/* TMY Simplified CSV */}
-                  {result.is_tmy && result.records_simplified && (
-                    <button
-                      type="button"
-                      onClick={downloadSimplifiedCSV}
-                      className="flex items-center gap-3 p-4 rounded-xl border border-white/[0.08] hover:border-amber-400/30 bg-white/[0.02] hover:bg-amber-400/[0.04] transition-all text-left sm:col-span-2"
-                    >
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-400/10">
-                        <FileText className="h-5 w-5 text-purple-400" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-200">
-                          {language === "tr"
-                            ? "CSV İndir — Sadeleştirilmiş (Gün + Saat)"
-                            : "Download CSV — Simplified (Day of Year + Hour)"}
-                        </p>
-                        <p className="text-[10px] text-slate-500 font-mono mt-0.5 truncate">
-                          {buildFilename(result, "_simplified_day_hour", "csv")}
-                        </p>
-                      </div>
-                    </button>
-                  )}
-                </div>
-              </GlassCard>
-            </div>
-          )}
         </div>
+
+        {/* ════ Results below ════ */}
+        {result && (
+          <div id="irr-results" className="mt-6 space-y-5">
+
+            {/* Summary card */}
+            <div className="glass-card">
+              <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
+                <div>
+                  <h2 className="text-base font-bold text-slate-100 mb-1">
+                    {tr("Data Summary", "Veri Özeti")}
+                  </h2>
+                  <p className="text-xs text-slate-500">{MODEL_LABELS[result.model] ?? result.model}</p>
+                </div>
+                {result.is_tmy && (
+                  <span className="text-[11px] px-2.5 py-1 rounded-full border border-amber-400/30 text-amber-400 bg-amber-400/[0.06] font-medium">TMY</span>
+                )}
+              </div>
+
+              {/* Meta row */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5 pb-5 border-b border-white/[0.06]">
+                {[
+                  { icon: <MapPin className="h-3.5 w-3.5 text-slate-500" />, label: tr("Location", "Konum"), value: `${result.location.latitude.toFixed(3)}°, ${result.location.longitude.toFixed(3)}°` },
+                  { icon: <Layers className="h-3.5 w-3.5 text-slate-500" />, label: tr("Elevation", "Yükseklik"), value: `${result.location.elevation} m` },
+                  { icon: <Calendar className="h-3.5 w-3.5 text-slate-500" />, label: tr("Period", "Zaman Aralığı"), value: result.is_tmy ? "TMY" : result.year_range ? `${result.year_range.start_year}–${result.year_range.end_year}` : "—" },
+                  { icon: <Hash className="h-3.5 w-3.5 text-slate-500" />, label: tr("Total Rows", "Satır Sayısı"), value: result.total_rows.toLocaleString() },
+                ].map(({ icon, label, value }) => (
+                  <div key={label} className="flex items-center gap-2">
+                    {icon}
+                    <div>
+                      <p className="text-[10px] text-slate-500">{label}</p>
+                      <p className="text-xs font-semibold text-slate-200">{value}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Stats */}
+              {(() => {
+                const annual = Object.entries(result.summary).filter(([k]) => k.startsWith("annual_"));
+                const peak = Object.entries(result.summary).filter(([k]) => k.startsWith("peak_"));
+                return (
+                  <div className="space-y-4">
+                    {annual.length > 0 && (
+                      <div>
+                        <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-2">
+                          {tr("Annual Total", "Yıllık Toplam")}
+                        </p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          {annual.map(([key, val]) => {
+                            const col = key.replace("annual_", "").replace("_kwh_m2", "");
+                            return (
+                              <div key={key} className="p-3.5 rounded-xl border border-amber-400/20 bg-amber-400/[0.04]">
+                                <p className="text-[10px] text-amber-400/70 font-medium mb-1">{colLabel(col)}</p>
+                                <p className="text-2xl font-bold tabular-nums text-amber-400 leading-none">
+                                  {val.toLocaleString(undefined, { maximumFractionDigits: 1 })}
+                                </p>
+                                <p className="text-[10px] text-slate-500 mt-1">kWh / m²</p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    {peak.length > 0 && (
+                      <div>
+                        <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-2">
+                          {tr("Peak Value", "Tepe Değer")}
+                        </p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          {peak.map(([key, val]) => {
+                            const col = key.replace("peak_", "").replace("_w_m2", "");
+                            return (
+                              <div key={key} className="p-3.5 rounded-xl border border-white/[0.06] bg-white/[0.02]">
+                                <p className="text-[10px] text-slate-500 font-medium mb-1">{colLabel(col)}</p>
+                                <p className="text-2xl font-bold tabular-nums text-slate-200 leading-none">
+                                  {val.toLocaleString(undefined, { maximumFractionDigits: 1 })}
+                                </p>
+                                <p className="text-[10px] text-slate-500 mt-1">W / m²</p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Downloads */}
+            <div className="glass-card">
+              <div className="flex items-center gap-2 mb-4">
+                <Download className="h-4 w-4 text-amber-400" />
+                <h2 className="text-sm font-semibold text-slate-200">{tr("Download", "İndir")}</h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button type="button" onClick={downloadCSV}
+                  className="flex items-center gap-3 p-4 rounded-xl border border-white/[0.08] hover:border-amber-400/30 bg-white/[0.02] hover:bg-amber-400/[0.04] transition-all text-left">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-400/10">
+                    <FileText className="h-5 w-5 text-emerald-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-200">{tr("Download CSV", "CSV İndir")}</p>
+                    <p className="text-[10px] text-slate-500 font-mono mt-0.5 truncate">{buildFilename(result, "", "csv")}</p>
+                  </div>
+                </button>
+
+                <button type="button" onClick={downloadJSON}
+                  className="flex items-center gap-3 p-4 rounded-xl border border-white/[0.08] hover:border-amber-400/30 bg-white/[0.02] hover:bg-amber-400/[0.04] transition-all text-left">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-400/10">
+                    <FileJson className="h-5 w-5 text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-200">{tr("Download JSON", "JSON İndir")}</p>
+                    <p className="text-[10px] text-slate-500 font-mono mt-0.5 truncate">{buildFilename(result, "", "json")}</p>
+                  </div>
+                </button>
+
+                {result.is_tmy && result.records_simplified && (
+                  <button type="button" onClick={downloadSimplifiedCSV}
+                    className="flex items-center gap-3 p-4 rounded-xl border border-white/[0.08] hover:border-amber-400/30 bg-white/[0.02] hover:bg-amber-400/[0.04] transition-all text-left sm:col-span-2">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-400/10">
+                      <FileText className="h-5 w-5 text-purple-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-200">
+                        {tr("CSV — Simplified (Day of Year + Hour)", "CSV — Sadeleştirilmiş (Gün + Saat)")}
+                      </p>
+                      <p className="text-[10px] text-slate-500 font-mono mt-0.5 truncate">{buildFilename(result, "_simplified_day_hour", "csv")}</p>
+                    </div>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

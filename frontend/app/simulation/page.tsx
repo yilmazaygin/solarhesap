@@ -65,7 +65,7 @@ export default function SimulationPage() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8 animate-fade-in">
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2">
+          <h1 className="text-2xl sm:text-4xl font-bold tracking-tight mb-2">
             {language === "tr" ? "Güneş" : "Solar"} <span className="text-gradient-solar">{language === "tr" ? "Simülasyonu" : "Simulation"}</span>
           </h1>
           <p className="text-slate-400 max-w-2xl">
@@ -88,7 +88,7 @@ export default function SimulationPage() {
                 }}
                 id={`tab-${tab.id}`}
               >
-                <Icon className="h-4 w-4 inline mr-2" />
+                <Icon className="h-4 w-4 hidden sm:inline mr-2" />
                 {tab.label}
               </button>
             );

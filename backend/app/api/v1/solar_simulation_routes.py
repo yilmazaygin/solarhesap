@@ -31,11 +31,18 @@ from app.schemas.clearsky_api_schemas import (
 )
 from app.schemas.advanced_modelchain_schemas import RunModelChainAdvancedRequest
 from app.schemas.irradiance_generator_schemas import GenerateIrradianceRequest
+from app.schemas.basic_electric_schemas import BasicElectricRequest
+from app.schemas.historical_schemas import HistoricalBasicRequest, HistoricalAdvancedRequest
 from app.services import clearsky_service
 from app.services.modelchain_service import run_modelchain as _run_modelchain
 from app.services.deep_comparison import run_deep_comparison
 from app.services.advanced_modelchain_service import run_advanced_modelchain as _run_advanced_modelchain
 from app.services.irradiance_generator_service import generate_irradiance as _generate_irradiance
+from app.services.basic_electric_service import run_basic_electric as _run_basic_electric
+from app.services.historical_service import (
+    run_historical_basic as _run_historical_basic,
+    run_historical_advanced as _run_historical_advanced,
+)
 
 router = APIRouter(prefix="/solar-simulation", tags=["Solar Simulation Models"])
 
@@ -156,3 +163,54 @@ async def generate_irradiance(request: GenerateIrradianceRequest):
     Uses ``asyncio.to_thread`` to avoid blocking the event loop.
     """
     return await asyncio.to_thread(_generate_irradiance, request)
+
+
+# ===========================================================================
+# Basic Electric Production Estimate (async — fetches PVGIS + runs ModelChain)
+# ===========================================================================
+
+@router.post("/basic-electric", summary="Basic Electric Production Estimate")
+async def basic_electric(request: BasicElectricRequest):
+    """Simple solar electricity production estimate.
+
+    Given a location, available area, and panel efficiency tier, returns:
+    - Hourly AC output (kW) for a full typical meteorological year
+    - Monthly energy totals (kWh)
+    - Annual summary (kWh, specific yield, capacity factor)
+    - System configuration (panel count, strings, inverter count)
+
+    Weather source is always PVGIS TMY.  No averaging strategies applied.
+    Panel and inverter are selected automatically from the efficiency tier.
+
+    Uses ``asyncio.to_thread`` to avoid blocking the event loop.
+    """
+    return await asyncio.to_thread(_run_basic_electric, request)
+
+
+# ===========================================================================
+# Historical Production Simulation (async — fetches PVGIS POA + runs ModelChain)
+# ===========================================================================
+
+@router.post("/historical/basic", summary="Historical Basic Production Simulation")
+async def historical_basic(request: HistoricalBasicRequest):
+    """Simulate solar production for a specific historical year using PVGIS hourly POA data.
+
+    Unlike basic-electric (which uses TMY), this endpoint fetches actual
+    meteorological data for the requested calendar year (2005–2022).
+    System layout is auto-configured from the efficiency-tier preset.
+
+    The response format matches basic-electric — use hourly/monthly data for
+    comparison against real measured production.
+    """
+    return await asyncio.to_thread(_run_historical_basic, request)
+
+
+@router.post("/historical/advanced", summary="Historical Advanced Production Simulation")
+async def historical_advanced(request: HistoricalAdvancedRequest):
+    """Simulate solar production for a specific historical year with a custom ModelChain.
+
+    Same as historical/basic but accepts a full ModelChain configuration
+    (module, inverter, temperature model, DC/AC models) for higher accuracy.
+    Weather source is always PVGIS hourly POA for the chosen year.
+    """
+    return await asyncio.to_thread(_run_historical_advanced, request)

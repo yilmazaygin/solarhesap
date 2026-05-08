@@ -1,0 +1,120 @@
+# Basic Electric Production Estimate — Panel/Inverter Presets
+#
+# Five efficiency tiers, each pointing to a real SAM-database module and
+# a Fronius 5 kW inverter.  Edit module_name / inverter_name to swap
+# components without touching any Python code.
+#
+# modules_per_string must keep string Voc < inverter Vdcmax (480 V here).
+# dc_ac_ratio: DC peak power / inverter AC rating (typical 1.1–1.3).
+# system_loss_pct: total real-world system losses applied after ModelChain.
+#   Accounts for soiling, DC/AC wiring, mismatch, degradation, availability.
+#   16 % reflects typical Turkish residential installation losses.
+# temperature_model + temperature_config: pvlib SAPM cell-temperature lookup.
+#   close_mount_glass_glass matches flush roof-mount PV installations.
+
+presets:
+
+  very_low:
+    label_en: "Very Low (14%)"
+    label_tr: "Çok Düşük (14%)"
+    description_en: "Budget polycrystalline silicon panels"
+    description_tr: "Uygun fiyatlı polikristal silikon paneller"
+    efficiency_pct: 14.22
+    module_db: CECMod
+    module_name: Shangpin_Solar_SPSM_275D
+    module_stc_w: 275.0
+    module_length_m: 1.954
+    module_width_m: 0.990
+    # 10 × Voc 43.8 V = 438 V  ✓ (< 480 V Vdcmax)
+    modules_per_string: 10
+    inverter_db: CECInverter
+    inverter_name: "Fronius_USA__IG_Plus_5_0_1_UNI__240V_"
+    inverter_paco_w: 5000
+    dc_ac_ratio: 1.25
+    system_loss_pct: 16.0
+    temperature_model: sapm
+    temperature_config: close_mount_glass_glass
+
+  low:
+    label_en: "Low (15%)"
+    label_tr: "Düşük (15%)"
+    description_en: "Standard monocrystalline silicon panels"
+    description_tr: "Standart monokristal silikon paneller"
+    efficiency_pct: 15.01
+    module_db: CECMod
+    module_name: EcoSolargy_ECO290S156P_72
+    module_stc_w: 289.9
+    module_length_m: 1.950
+    module_width_m: 0.990
+    # 10 × Voc 45.1 V = 451 V  ✓
+    modules_per_string: 10
+    inverter_db: CECInverter
+    inverter_name: "Fronius_USA__IG_Plus_5_0_1_UNI__240V_"
+    inverter_paco_w: 5000
+    dc_ac_ratio: 1.25
+    system_loss_pct: 16.0
+    temperature_model: sapm
+    temperature_config: close_mount_glass_glass
+
+  medium:
+    label_en: "Medium (18%)"
+    label_tr: "Orta (18%)"
+    description_en: "Efficient PERC monocrystalline panels"
+    description_tr: "Verimli PERC monokristal paneller"
+    efficiency_pct: 18.45
+    module_db: CECMod
+    module_name: Auxin_Solar_AXN6M610T300
+    module_stc_w: 300.1
+    module_length_m: 1.640
+    module_width_m: 0.992
+    # 11 × Voc 40.5 V = 445.5 V  ✓
+    modules_per_string: 11
+    inverter_db: CECInverter
+    inverter_name: "Fronius_USA__IG_Plus_5_0_1_UNI__240V_"
+    inverter_paco_w: 5000
+    dc_ac_ratio: 1.25
+    system_loss_pct: 16.0
+    temperature_model: sapm
+    temperature_config: close_mount_glass_glass
+
+  medium_high:
+    label_en: "Medium-High (20%)"
+    label_tr: "Orta-Yüksek (20%)"
+    description_en: "High-performance SunPower back-contact panels"
+    description_tr: "Yüksek performanslı SunPower arka-kontakt paneller"
+    efficiency_pct: 20.06
+    module_db: CECMod
+    module_name: SunPower_SPR_E20_327_COM_LAM
+    module_stc_w: 327.1
+    module_length_m: 1.559
+    module_width_m: 1.046
+    # 7 × Voc 65.1 V = 455.7 V  ✓
+    modules_per_string: 7
+    inverter_db: CECInverter
+    inverter_name: "Fronius_USA__IG_Plus_5_0_1_UNI__240V_"
+    inverter_paco_w: 5000
+    dc_ac_ratio: 1.25
+    system_loss_pct: 16.0
+    temperature_model: sapm
+    temperature_config: close_mount_glass_glass
+
+  high:
+    label_en: "High (22%)"
+    label_tr: "Yüksek (22%)"
+    description_en: "Premium SunPower X-Series back-contact panels"
+    description_tr: "Premium SunPower X-Serisi arka-kontakt paneller"
+    efficiency_pct: 22.07
+    module_db: CECMod
+    module_name: SunPower_SPR_X22_360_COM
+    module_stc_w: 360.0
+    module_length_m: 1.559
+    module_width_m: 1.046
+    # 6 × Voc 69.5 V = 417 V  ✓  (7 would be 486.5 V — too close)
+    modules_per_string: 6
+    inverter_db: CECInverter
+    inverter_name: "Fronius_USA__IG_Plus_5_0_1_UNI__240V_"
+    inverter_paco_w: 5000
+    dc_ac_ratio: 1.25
+    system_loss_pct: 16.0
+    temperature_model: sapm
+    temperature_config: close_mount_glass_glass

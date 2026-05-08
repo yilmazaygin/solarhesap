@@ -104,6 +104,18 @@ export function generateIrradiance(data: AnyData) {
   return request("/solar-simulation/generate-irradiance", data, { timeout });
 }
 
+export function runBasicElectric(data: AnyData) {
+  return request("/solar-simulation/basic-electric", data, { timeout: 120000 });
+}
+
+export function runHistoricalBasic(data: AnyData) {
+  return request("/solar-simulation/historical/basic", data, { timeout: 180000 });
+}
+
+export function runHistoricalAdvanced(data: AnyData) {
+  return request("/solar-simulation/historical/advanced", data, { timeout: 180000 });
+}
+
 /* ── Solar Tools Endpoints ───────────────────────────── */
 
 export function calcJulianDay(data: AnyData) {

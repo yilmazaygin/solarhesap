@@ -14,18 +14,22 @@ from app.core.settings import settings
 def create_app() -> FastAPI:
     """Build and configure the FastAPI application."""
 
+    is_dev = settings.APP_ENV == "development"
+
     app = FastAPI(
         title=settings.APP_NAME,
         version=settings.APP_VERSION,
         description=settings.APP_DESCRIPTION,
-        docs_url="/docs",
-        redoc_url="/redoc",
+        docs_url="/docs" if is_dev else None,
+        redoc_url="/redoc" if is_dev else None,
+        openapi_url="/openapi.json" if is_dev else None,
     )
 
     # --- CORS middleware (allow frontend access) ---
+    origins = ["*"] if is_dev else settings.ALLOWED_ORIGINS
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

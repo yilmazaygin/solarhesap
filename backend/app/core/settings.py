@@ -1,7 +1,7 @@
 # ./backend/app/core/settings.py
 """Application settings using Pydantic BaseSettings."""
 
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -18,7 +18,11 @@ class Settings(BaseSettings):
     APP_ENV: str = "production"
     APP_DEBUG: bool = False
 
-    PVGIS_BASE_URL: str = "https://re.jrc.ec.europa.eu/api/v5_3"
+    # Production'da tarayıcının ulaştığı gerçek domain — nginx arkasında olsa bile
+    # browser CORS header kontrolü yapar. Örnek: https://solarhesap.com
+    ALLOWED_ORIGINS: List[str] = []
+
+    PVGIS_BASE_URL: str = "https://re.jrc.ec.europa.eu/api/v5_3/"
     OPEN_METEO_BASE_URL: str = "https://archive-api.open-meteo.com/v1/archive"
 
     LOG_BASE_LEVEL: str = "INFO"

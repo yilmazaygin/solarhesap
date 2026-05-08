@@ -27,19 +27,20 @@ export const pvlibLocationSchema = z.object({
 });
 
 // --- Date Range ---
-export const dateRangeSchema = z
-  .object({
-    start_year: z
-      .number()
-      .int()
-      .min(2005, "Start year must be ≥ 2005")
-      .max(2025, "Start year must be ≤ 2025"),
-    end_year: z
-      .number()
-      .int()
-      .min(2005, "End year must be ≥ 2005")
-      .max(2025, "End year must be ≤ 2025"),
-  })
+export const dateRangeBaseSchema = z.object({
+  start_year: z
+    .number()
+    .int()
+    .min(2005, "Start year must be ≥ 2005")
+    .max(2025, "Start year must be ≤ 2025"),
+  end_year: z
+    .number()
+    .int()
+    .min(2005, "End year must be ≥ 2005")
+    .max(2025, "End year must be ≤ 2025"),
+});
+
+export const dateRangeSchema = dateRangeBaseSchema
   .refine((d) => d.start_year <= d.end_year, {
     message: "Start year must be ≤ end year",
     path: ["start_year"],
@@ -139,7 +140,7 @@ export const modelChainConfigSchema = z.object({
 
 // --- Individual Model Requests ---
 export const instesreBirdSchema = locationSchema
-  .merge(dateRangeSchema.innerType())
+  .merge(dateRangeBaseSchema)
   .merge(avgYearConfigSchema)
   .merge(
     z.object({
@@ -162,7 +163,7 @@ export const pvgisTmySchema = z.object({
 
 // --- Deep Comparison ---
 export const deepComparisonSchema = locationSchema
-  .merge(dateRangeSchema.innerType())
+  .merge(dateRangeBaseSchema)
   .merge(avgYearConfigSchema)
   .merge(atmosphericSchema)
   .merge(

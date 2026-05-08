@@ -1,0 +1,58 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    expose:
+      - "8000"
+    environment:
+      APP_HOST: "0.0.0.0"
+      APP_PORT: "8000"
+      APP_ENV: "production"
+      APP_DEBUG: "False"
+      APP_NAME: "Solarhesap"
+      APP_VERSION: "v0.2.0"
+      APP_DESCRIPTION: "Solarhesap is a Tübitak 2209 project"
+      PVGIS_BASE_URL: "https://re.jrc.ec.europa.eu/api/v5_3/"
+      OPEN_METEO_BASE_URL: "https://archive-api.open-meteo.com/v1/archive"
+      LOG_BASE_LEVEL: "INFO"
+      LOG_STREAM_HANDLER: "True"
+      OPENMETEO_TIMEOUT: "30"
+    volumes:
+      - backend_logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Tarayıcı istekleri nginx üzerinden geçtiği için relative URL yeterli
+        NEXT_PUBLIC_API_BASE_URL: "/api/v1"
+    expose:
+      - "3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  nginx:
+    build:
+      context: ./nginx
+    ports:
+      # Sunucuda 80:80 olarak değiştir (bkz. DEPLOY.md)
+      - "9090:80"
+    environment:
+      # Bir IP'nin dakikadaki maksimum istek sayısı — değiştirmek için bu satırı düzenle
+      API_RATE_LIMIT: "30"
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+
+volumes:
+  backend_logs:

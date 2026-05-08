@@ -8,3 +8,7 @@ __pycache__/
 *.log
 /logs/*
 !/logs/.gitkeep
+
+# Analysis / scratch files
+*.md
+!README.md

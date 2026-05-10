@@ -1,11 +1,7 @@
 # ./backend/app/schemas/irradiance_generator_schemas.py
-"""Pydantic schema for the Irradiance Generator endpoint.
-
-Returns raw multi-year hourly irradiance data with no averaging strategy.
-"""
-
 from __future__ import annotations
 
+from datetime import date
 from enum import Enum
 
 from pydantic import BaseModel, Field, ConfigDict, model_validator
@@ -30,11 +26,15 @@ class GenerateIrradianceRequest(BaseModel):
     elevation: float = Field(default=0.0, ge=-450, le=8850)
     timezone: str = Field(default="UTC")
 
-    # --- Year range (required for all non-TMY models) ---
+    # --- Full date range (preferred) ---
+    start_date: str | None = Field(default=None, description="ISO date string YYYY-MM-DD")
+    end_date: str | None = Field(default=None, description="ISO date string YYYY-MM-DD")
+
+    # --- Year-only fallback (kept for backward compatibility) ---
     start_year: int | None = Field(default=None, ge=2005, le=2025)
     end_year: int | None = Field(default=None, ge=2005, le=2025)
 
-    # --- Atmospheric params (Bird / Ineichen / Solis) ---
+    # --- Atmospheric params ---
     ozone: float = Field(default=0.3, ge=0, le=1)
     aod500: float = Field(default=0.1, ge=0, le=2)
     aod380: float = Field(default=0.15, ge=0, le=2)
@@ -49,19 +49,49 @@ class GenerateIrradianceRequest(BaseModel):
     usehorizon: bool = Field(default=True)
     raddatabase: str | None = Field(default=None)
 
-    # --- PVGIS TMY year range (optional, PVGIS uses its own internal range) ---
+    # --- PVGIS TMY year range ---
     pvgis_startyear: int | None = Field(default=None)
     pvgis_endyear: int | None = Field(default=None)
 
+    # Resolved date objects (set by validator)
+    _resolved_start: date | None = None
+    _resolved_end: date | None = None
+
     @model_validator(mode="after")
     def validate_request(self) -> GenerateIrradianceRequest:
-        if self.model != IrradianceModelEnum.PVGIS_TMY:
-            if self.start_year is None or self.end_year is None:
-                raise ValueError("start_year and end_year are required for non-TMY models")
-            if self.start_year > self.end_year:
-                raise ValueError("start_year must be ≤ end_year")
-            if self.end_year - self.start_year + 1 > 20:
-                raise ValueError("Maximum range is 20 years")
-            if self.model == IrradianceModelEnum.PVGIS_POA and self.end_year > 2023:
-                raise ValueError("PVGIS SARAH2 data available only up to 2023")
+        if self.model == IrradianceModelEnum.PVGIS_TMY:
+            return self
+
+        # Resolve dates: prefer full date strings, fall back to years
+        if self.start_date and self.end_date:
+            try:
+                s = date.fromisoformat(self.start_date)
+                e = date.fromisoformat(self.end_date)
+            except ValueError as exc:
+                raise ValueError(f"Invalid date format: {exc}") from exc
+            self._resolved_start = s
+            self._resolved_end = e
+            # Backfill year fields for validation reuse
+            self.start_year = s.year
+            self.end_year = e.year
+        elif self.start_year is not None and self.end_year is not None:
+            self._resolved_start = date(self.start_year, 1, 1)
+            self._resolved_end = date(self.end_year, 12, 31)
+        else:
+            raise ValueError("Provide start_date/end_date or start_year/end_year for non-TMY models")
+
+        if self._resolved_start > self._resolved_end:
+            raise ValueError("start date must be ≤ end date")
+        if self.end_year - self.start_year + 1 > 20:
+            raise ValueError("Maximum range is 20 years")
+        if self.model == IrradianceModelEnum.PVGIS_POA and self.end_year > 2023:
+            raise ValueError("PVGIS SARAH2 data available only up to 2023")
         return self
+
+    @property
+    def resolved_start(self) -> date:
+        return self._resolved_start  # type: ignore[return-value]
+
+    @property
+    def resolved_end(self) -> date:
+        return self._resolved_end  # type: ignore[return-value]

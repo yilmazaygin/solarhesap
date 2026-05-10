@@ -113,8 +113,8 @@ export default function IrradiancePage() {
 
   /* ── Model & time ── */
   const [model, setModel] = useState("ineichen");
-  const [startYear, setStartYear] = useState<number>(DEFAULTS.start_year);
-  const [endYear, setEndYear] = useState<number>(DEFAULTS.end_year);
+  const [startDate, setStartDate] = useState(`${DEFAULTS.start_year}-01-01`);
+  const [endDate, setEndDate] = useState(`${DEFAULTS.end_year}-12-31`);
 
   /* ── Advanced params ── */
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -144,7 +144,7 @@ export default function IrradiancePage() {
       model, latitude: lat, longitude: lng,
       elevation: parseFloat(elevation) || 0, timezone: tz,
     };
-    if (!isTmy) { payload.start_year = startYear; payload.end_year = endYear; }
+    if (!isTmy) { payload.start_date = startDate; payload.end_date = endDate; }
     if (isBird) {
       Object.assign(payload, { ozone, aod500, aod380, albedo, asymmetry });
       if (model === "instesre_bird") payload.solar_constant = 1367.0;
@@ -253,24 +253,24 @@ export default function IrradiancePage() {
                 </p>
               </div>
 
-              {/* Year range (hidden for TMY) */}
+              {/* Date range (hidden for TMY) */}
               {!isTmy && (
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-[11px] text-slate-500 uppercase tracking-wider mb-1.5">
-                      {tr("Start Year", "Başlangıç Yılı")}
+                      {tr("Start Date", "Başlangıç Tarihi")}
                     </label>
-                    <input type="number" value={startYear} min={2005} max={2025}
-                      onChange={(e) => setStartYear(parseInt(e.target.value))}
+                    <input type="date" value={startDate} min="2005-01-01" max={isPoa ? "2023-12-31" : "2025-12-31"}
+                      onChange={(e) => setStartDate(e.target.value)}
                       className="input-field py-2.5 text-sm" />
                   </div>
                   <div>
                     <label className="block text-[11px] text-slate-500 uppercase tracking-wider mb-1.5">
-                      {tr("End Year", "Bitiş Yılı")}
+                      {tr("End Date", "Bitiş Tarihi")}
                       {isPoa && <span className="ml-1 text-slate-600">(max 2023)</span>}
                     </label>
-                    <input type="number" value={endYear} min={2005} max={isPoa ? 2023 : 2025}
-                      onChange={(e) => setEndYear(parseInt(e.target.value))}
+                    <input type="date" value={endDate} min="2005-01-01" max={isPoa ? "2023-12-31" : "2025-12-31"}
+                      onChange={(e) => setEndDate(e.target.value)}
                       className="input-field py-2.5 text-sm" />
                   </div>
                 </div>
@@ -373,7 +373,7 @@ export default function IrradiancePage() {
               </button>
 
               <p className="text-[10px] text-slate-600 text-center">
-                {!isTmy && endYear >= startYear ? `${endYear - startYear + 1} ${tr("year(s)", "yıl")} · ` : ""}
+                {!isTmy && startDate && endDate ? `${startDate} → ${endDate} · ` : ""}
                 {tr("raw hourly timeseries", "ham saatlik zaman serisi")}
               </p>
             </div>
@@ -403,7 +403,7 @@ export default function IrradiancePage() {
                 {[
                   { icon: <MapPin className="h-3.5 w-3.5 text-slate-500" />, label: tr("Location", "Konum"), value: `${result.location.latitude.toFixed(3)}°, ${result.location.longitude.toFixed(3)}°` },
                   { icon: <Layers className="h-3.5 w-3.5 text-slate-500" />, label: tr("Elevation", "Yükseklik"), value: `${result.location.elevation} m` },
-                  { icon: <Calendar className="h-3.5 w-3.5 text-slate-500" />, label: tr("Period", "Zaman Aralığı"), value: result.is_tmy ? "TMY" : result.year_range ? `${result.year_range.start_year}–${result.year_range.end_year}` : "—" },
+                  { icon: <Calendar className="h-3.5 w-3.5 text-slate-500" />, label: tr("Period", "Zaman Aralığı"), value: result.is_tmy ? "TMY" : (startDate && endDate ? `${startDate} – ${endDate}` : result.year_range ? `${result.year_range.start_year}–${result.year_range.end_year}` : "—") },
                   { icon: <Hash className="h-3.5 w-3.5 text-slate-500" />, label: tr("Total Rows", "Satır Sayısı"), value: result.total_rows.toLocaleString() },
                 ].map(({ icon, label, value }) => (
                   <div key={label} className="flex items-center gap-2">
@@ -418,18 +418,19 @@ export default function IrradiancePage() {
 
               {/* Stats */}
               {(() => {
-                const annual = Object.entries(result.summary).filter(([k]) => k.startsWith("annual_"));
-                const peak = Object.entries(result.summary).filter(([k]) => k.startsWith("peak_"));
+                const total = Object.entries(result.summary).filter(([k]) => k.startsWith("total_"));
+                const avg   = Object.entries(result.summary).filter(([k]) => k.startsWith("avg_"));
+                const peak  = Object.entries(result.summary).filter(([k]) => k.startsWith("peak_"));
                 return (
                   <div className="space-y-4">
-                    {annual.length > 0 && (
+                    {total.length > 0 && (
                       <div>
                         <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-2">
-                          {tr("Annual Total", "Yıllık Toplam")}
+                          {tr("Total", "Toplam")}
                         </p>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                          {annual.map(([key, val]) => {
-                            const col = key.replace("annual_", "").replace("_kwh_m2", "");
+                          {total.map(([key, val]) => {
+                            const col = key.replace("total_", "").replace("_kwh_m2", "");
                             return (
                               <div key={key} className="p-3.5 rounded-xl border border-amber-400/20 bg-amber-400/[0.04]">
                                 <p className="text-[10px] text-amber-400/70 font-medium mb-1">{colLabel(col)}</p>
@@ -443,10 +444,31 @@ export default function IrradiancePage() {
                         </div>
                       </div>
                     )}
+                    {avg.length > 0 && (
+                      <div>
+                        <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-2">
+                          {tr("Average", "Ortalama")}
+                        </p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          {avg.map(([key, val]) => {
+                            const col = key.replace("avg_", "").replace("_w_m2", "");
+                            return (
+                              <div key={key} className="p-3.5 rounded-xl border border-sky-400/20 bg-sky-400/[0.04]">
+                                <p className="text-[10px] text-sky-400/70 font-medium mb-1">{colLabel(col)}</p>
+                                <p className="text-2xl font-bold tabular-nums text-sky-400 leading-none">
+                                  {val.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                                </p>
+                                <p className="text-[10px] text-slate-500 mt-1">W / m²</p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                     {peak.length > 0 && (
                       <div>
                         <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-2">
-                          {tr("Peak Value", "Tepe Değer")}
+                          {tr("Peak", "Tepe")}
                         </p>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                           {peak.map(([key, val]) => {

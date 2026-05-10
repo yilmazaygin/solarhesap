@@ -1,10 +1,10 @@
-# Solarhesap — Deployment Guide
+# Solarhesap — Sunucu Kurulum Rehberi
 
-Step-by-step instructions to deploy Solarhesap on a fresh Ubuntu 22.04 LTS server.
+Sıfır bir Ubuntu 22.04 LTS sunucusunda Solarhesap'ı adım adım ayağa kaldırma.
 
 ---
 
-## 1. Update the Server
+## 1. Sunucuyu Güncelle
 
 ```bash
 sudo apt update && sudo apt upgrade -y
@@ -12,7 +12,7 @@ sudo apt update && sudo apt upgrade -y
 
 ---
 
-## 2. Install Docker
+## 2. Docker'ı Kur
 
 ```bash
 sudo apt install -y ca-certificates curl gnupg
@@ -35,7 +35,7 @@ docker --version
 docker compose version
 ```
 
-Add your user to the `docker` group (so you can run Docker without sudo):
+Mevcut kullanıcıyı `docker` grubuna ekle (sudo olmadan çalıştırmak için):
 
 ```bash
 sudo usermod -aG docker $USER
@@ -44,90 +44,90 @@ newgrp docker
 
 ---
 
-## 3. Clone the Repository
+## 3. Projeyi Sunucuya Al
 
 ```bash
 git clone <repo-url> /opt/solarhesap
 cd /opt/solarhesap
 ```
 
-Or copy from your local machine:
+Alternatif olarak yerel makineden kopyalama:
 
 ```bash
 rsync -avz --exclude='node_modules' --exclude='.next' --exclude='.venv' \
-  ./ user@server-ip:/opt/solarhesap/
+  ./ kullanici@sunucu-ip:/opt/solarhesap/
 ```
 
 ---
 
-## 4. Configure Environment Variables
+## 4. Ortam Değişkenlerini Yapılandır
 
 ```bash
-cp backend/.env.example backend/.env   # if .env.example exists, otherwise create backend/.env
+cp backend/.env.example backend/.env   # .env.example yoksa backend/.env oluştur
 nano backend/.env
 ```
 
-Minimum required values:
+Zorunlu asgari değerler:
 
 ```env
 APP_ENV=production
 APP_VERSION=v0.2.0
 
-# Comma-separated list of allowed frontend origins (required for CORS in production)
-# Example: https://solarhesap.com,https://www.solarhesap.com
-ALLOWED_ORIGINS=https://yourdomain.com
+# Virgülle ayrılmış izin verilen frontend domain'leri (üretimde CORS için zorunlu)
+# Örnek: https://solarhesap.com,https://www.solarhesap.com
+ALLOWED_ORIGINS=https://alanadiniz.com
 
 LOG_BASE_LEVEL=INFO
 LOG_STREAM_HANDLER=True
 ```
 
-`backend/.env` is never committed to git (protected by `.gitignore`).
+`backend/.env` asla git'e commit edilmez (`.gitignore` tarafından korunur).
 
 ---
 
-## 5. Configure the Port
+## 5. Portu Yapılandır
 
-In `docker-compose.yml`, the nginx service exposes port `9090:80` by default.
-For production on port 80:
+`docker-compose.yml` dosyasında nginx servisi varsayılan olarak `9090:80` portunu kullanır.
+Üretimde 80. portu açmak için:
 
 ```bash
-# Edit docker-compose.yml:
-#   - "9090:80"  ← change this to
-#   - "80:80"
+# docker-compose.yml içinde:
+#   - "9090:80"  ← bunu
+#   - "80:80"    ← buna çevir
 nano docker-compose.yml
 ```
 
-> If another service (Traefik, Apache, host nginx) is already using port 80, either stop it or keep Solarhesap on a different port.
+> 80. portu başka bir servis (Traefik, Apache, host nginx) kullanıyorsa ya o servisi durdur ya da Solarhesap'ı farklı bir portta bırak.
 
 ---
 
-## 6. (Optional) Adjust Rate Limiting
+## 6. (İsteğe Bağlı) Rate Limit Ayarla
 
-In `docker-compose.yml` under the `nginx` service:
+`docker-compose.yml` içindeki `nginx` servisinin `environment` bölümünde:
 
 ```yaml
-API_RATE_LIMIT: "30"   # max requests per minute per IP
+API_RATE_LIMIT: "30"   # dakikada IP başına maksimum istek
 ```
 
 ---
 
-## 7. Build and Start
+## 7. Servisleri Derle ve Başlat
 
 ```bash
 docker compose -f docker-compose.yml up -d --build
 ```
 
-> **Important:** Don't use `docker compose up` alone — that loads `docker-compose.override.yml` (development mode).
+> **Önemli:** Tek başına `docker compose up` kullanma — bu `docker-compose.override.yml` dosyasını da yükler (geliştirme modu).
 
-First build may take 5–10 minutes (Python dependencies + Next.js compilation).
+İlk build 5–10 dakika sürebilir (Python bağımlılıkları + Next.js derleme).
 
-Check status:
+Durum kontrolü:
 
 ```bash
 docker compose ps
 ```
 
-Expected output:
+Beklenen çıktı:
 
 ```
 NAME                     STATUS
@@ -138,67 +138,67 @@ solarhesap-nginx-1       Up
 
 ---
 
-## 8. Verify
+## 8. Çalıştığını Doğrula
 
 ```bash
 curl http://localhost/api/v1/
-# Expected: {"status":"ok","app":"Solarhesap","version":"v0.2.0"}
+# Beklenen: {"status":"ok","app":"Solarhesap","version":"v0.2.0"}
 ```
 
-Open `http://server-ip` in your browser — the application should load.
+Tarayıcıdan `http://sunucu-ip` adresine gidildiğinde uygulama açılmalıdır.
 
 ---
 
-## 9. HTTPS with Let's Encrypt
+## 9. HTTPS — Let's Encrypt ile SSL Sertifikası
 
-If you have a domain name, add a free SSL certificate via Certbot.
+Bir alan adın varsa Certbot ile ücretsiz SSL sertifikası ekleyebilirsin.
 
-### 9a. Install Certbot
+### 9a. Certbot'u Kur
 
 ```bash
 sudo apt install -y certbot
 ```
 
-### 9b. Obtain a Certificate
+### 9b. Sertifika Al
 
-Temporarily stop nginx to free port 80:
+80. portu serbest bırakmak için nginx'i geçici olarak durdur:
 
 ```bash
 docker compose stop nginx
-sudo certbot certonly --standalone -d yourdomain.com -d www.yourdomain.com
+sudo certbot certonly --standalone -d alanadiniz.com -d www.alanadiniz.com
 docker compose start nginx
 ```
 
-Certificates are saved to `/etc/letsencrypt/live/yourdomain.com/`.
+Sertifikalar `/etc/letsencrypt/live/alanadiniz.com/` altına kaydedilir.
 
-### 9c. Update nginx Configuration
+### 9c. Nginx Yapılandırmasını Güncelle
 
-Edit `nginx/nginx.conf.template`:
+`nginx/nginx.conf.template` dosyasını aşağıdaki gibi düzenle:
 
 ```nginx
 limit_req_zone $binary_remote_addr zone=api:10m rate=${API_RATE_LIMIT}r/m;
 
 server_tokens off;
 
-# HTTP → HTTPS redirect
+# HTTP → HTTPS yönlendirmesi
 server {
     listen 80;
-    server_name yourdomain.com www.yourdomain.com;
+    server_name alanadiniz.com www.alanadiniz.com;
     return 301 https://$host$request_uri;
 }
 
 server {
     listen 443 ssl;
-    server_name yourdomain.com www.yourdomain.com;
+    server_name alanadiniz.com www.alanadiniz.com;
 
-    ssl_certificate     /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
+    ssl_certificate     /etc/letsencrypt/live/alanadiniz.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/alanadiniz.com/privkey.pem;
     ssl_protocols       TLSv1.2 TLSv1.3;
     ssl_prefer_server_ciphers on;
 
     client_max_body_size 1M;
 
-    # Security headers
+    # Güvenlik başlıkları
     add_header X-Content-Type-Options    "nosniff"           always;
     add_header X-Frame-Options           "SAMEORIGIN"        always;
     add_header X-XSS-Protection          "1; mode=block"     always;
@@ -233,9 +233,9 @@ server {
 }
 ```
 
-### 9d. Mount Certificates into nginx
+### 9d. Sertifika Dosyalarını nginx Container'ına Bağla
 
-Add a volume to the `nginx` service in `docker-compose.yml`:
+`docker-compose.yml` içindeki `nginx` servisine volume ekle:
 
 ```yaml
 nginx:
@@ -246,33 +246,33 @@ nginx:
     - "443:443"
 ```
 
-Rebuild nginx:
+nginx'i yeniden derle ve başlat:
 
 ```bash
 docker compose -f docker-compose.yml up -d --build nginx
 ```
 
-### 9e. Update ALLOWED_ORIGINS
+### 9e. ALLOWED_ORIGINS'i Güncelle
 
-In `backend/.env`:
+`backend/.env` dosyasında:
 
 ```env
-ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+ALLOWED_ORIGINS=https://alanadiniz.com,https://www.alanadiniz.com
 ```
 
-Then restart the backend:
+Backend'i yeniden başlat:
 
 ```bash
 docker compose -f docker-compose.yml up -d backend
 ```
 
-### 9f. Auto-Renewal
+### 9f. Otomatik Yenileme
 
 ```bash
 sudo crontab -e
 ```
 
-Add this line:
+Şu satırı ekle:
 
 ```
 0 3 * * * docker compose -f /opt/solarhesap/docker-compose.yml stop nginx && certbot renew --quiet && docker compose -f /opt/solarhesap/docker-compose.yml start nginx
@@ -280,7 +280,7 @@ Add this line:
 
 ---
 
-## 10. Updating the Application
+## 10. Güncelleme
 
 ```bash
 cd /opt/solarhesap
@@ -288,7 +288,7 @@ git pull
 docker compose -f docker-compose.yml up -d --build
 ```
 
-To rebuild only a specific service:
+Yalnızca belirli bir servisi güncellemek için:
 
 ```bash
 docker compose -f docker-compose.yml up -d --build backend
@@ -296,28 +296,28 @@ docker compose -f docker-compose.yml up -d --build backend
 
 ---
 
-## 11. Viewing Logs
+## 11. Log Yönetimi
 
 ```bash
-# Live logs for all services
+# Tüm servisler için canlı loglar
 docker compose logs -f
 
-# Last 100 lines from backend
+# Backend son 100 satır
 docker compose logs --tail=100 backend
 
-# Backend application logs (from volume)
+# Backend uygulama logları (volume'dan)
 docker run --rm -v solarhesap_backend_logs:/logs alpine ls /logs
 ```
 
 ---
 
-## Troubleshooting
+## Sorun Giderme
 
-| Symptom | Check |
+| Belirti | Kontrol |
 |---|---|
-| Site not loading | `docker compose ps` — are all services `Up`? |
-| Backend won't start | `docker compose logs backend` — missing `.env` values? |
-| 429 Too Many Requests | Increase `API_RATE_LIMIT` in `docker-compose.yml` |
-| CORS error in browser | Check `ALLOWED_ORIGINS` in `backend/.env` (include protocol: `https://`) |
-| Build takes too long | Normal for first build — Next.js + Python dependencies are downloaded |
-| Certificate errors | Check `/etc/letsencrypt/live/yourdomain.com/` permissions |
+| Site açılmıyor | `docker compose ps` — tüm servisler `Up` mı? |
+| Backend başlamıyor | `docker compose logs backend` — `.env` eksik değer var mı? |
+| 429 Too Many Requests | `API_RATE_LIMIT` değerini artır |
+| Tarayıcıda CORS hatası | `backend/.env` içindeki `ALLOWED_ORIGINS` değerini kontrol et (protokol dahil: `https://`) |
+| Build çok uzun sürüyor | İlk build'de Next.js + Python bağımlılıkları indirilir — bu normaldir |
+| Sertifika hatası | `/etc/letsencrypt/live/alanadiniz.com/` klasörünün izinlerini kontrol et |

@@ -2,10 +2,11 @@
 
 import { useMemo, useState } from "react";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  BarChart, Bar, LineChart, Line,
+  XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend,
 } from "recharts";
-import { ChevronLeft, Zap } from "lucide-react";
+import { ChevronLeft, Zap, BarChart3, TrendingUp } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════
    Types
@@ -18,7 +19,7 @@ interface HourlyRecord {
 
 interface HistoricalComparisonChartProps {
   hourlyData: HourlyRecord[];
-  actualData?: HourlyRecord[];   // uploaded actual production (optional)
+  actualData?: HourlyRecord[];
   annualKwh: number;
   actualAnnualKwh?: number;
   year: number;
@@ -95,6 +96,7 @@ export default function HistoricalComparisonChart({
   const [level, setLevel] = useState<DrillLevel>("year");
   const [selMonth, setSelMonth] = useState<number | null>(null);
   const [selDay, setSelDay] = useState<number | null>(null);
+  const [chartType, setChartType] = useState<"bar" | "line">("bar");
 
   const hasActual = !!actualData?.length;
 
@@ -193,12 +195,18 @@ export default function HistoricalComparisonChart({
 
   const yUnit = level === "day" ? "kW" : "kWh";
   const yLabel = level === "day" ? "AC Power (kW)" : "Energy (kWh)";
+  const canClick = level !== "day";
 
   const hint = level === "year"
-    ? "Click a month bar to see daily breakdown"
+    ? "Click a month to see daily breakdown"
     : level === "month"
-      ? "Click a day bar to see hourly profile"
+      ? "Click a day to see hourly profile"
       : null;
+
+  const periodLabel =
+    level === "year" ? "Annual production"
+    : level === "month" ? "Monthly production"
+    : "Daily production";
 
   const crumb =
     level === "year"
@@ -220,6 +228,9 @@ export default function HistoricalComparisonChart({
             <Zap className="h-4 w-4 text-amber-400" />
             Energy Output
           </h3>
+          <span className="text-[10px] px-2 py-0.5 rounded-full border border-amber-400/20 text-amber-400/80 bg-amber-400/[0.06]">
+            {periodLabel}
+          </span>
           {level !== "year" && (
             <button
               type="button"
@@ -232,9 +243,24 @@ export default function HistoricalComparisonChart({
           )}
           {crumb && <span className="text-xs text-slate-400 font-medium">{crumb}</span>}
         </div>
-        {hint && (
-          <span className="text-[10px] text-slate-600 italic hidden sm:block">{hint}</span>
-        )}
+        <div className="flex items-center gap-2">
+          {hint && (
+            <span className="text-[10px] text-slate-600 italic hidden sm:block">{hint}</span>
+          )}
+          {/* Chart type toggle */}
+          <div className="flex gap-0.5 p-0.5 rounded-lg bg-white/[0.04] border border-white/[0.06]">
+            <button type="button" onClick={() => setChartType("bar")}
+              className={`p-1.5 rounded-md transition-all ${chartType === "bar" ? "bg-amber-400 text-slate-900" : "text-slate-400 hover:text-white"}`}
+              title="Bar chart">
+              <BarChart3 className="h-3.5 w-3.5" />
+            </button>
+            <button type="button" onClick={() => setChartType("line")}
+              className={`p-1.5 rounded-md transition-all ${chartType === "line" ? "bg-amber-400 text-slate-900" : "text-slate-400 hover:text-white"}`}
+              title="Line chart">
+              <TrendingUp className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Actual vs Simulated delta banner */}
@@ -273,51 +299,100 @@ export default function HistoricalComparisonChart({
       {/* Chart */}
       <div style={{ height: 300 }}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={chartData}
-            margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
-            onClick={level !== "day" ? handleBarClick : undefined}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-            <XAxis
-              dataKey="name"
-              tick={{ fill: "#64748b", fontSize: 11 }}
-              axisLine={{ stroke: "rgba(255,255,255,0.06)" }}
-              cursor={level !== "day" ? "pointer" : "default"}
-            />
-            <YAxis
-              tick={{ fill: "#64748b", fontSize: 11 }}
-              axisLine={{ stroke: "rgba(255,255,255,0.06)" }}
-              label={{ value: yLabel, angle: -90, position: "insideLeft", fill: "#64748b", fontSize: 10, dy: 50 }}
-            />
-            <Tooltip
-              content={<ComparisonTooltip unit={yUnit} hasActual={hasActual} />}
-              cursor={{ fill: "rgba(255,255,255,0.04)" }}
-            />
-            {hasActual && (
-              <Legend
-                wrapperStyle={{ paddingTop: 8, fontSize: 11, color: "#94a3b8" }}
-                formatter={(value) => value === "simulated" ? "Simulated" : "Actual"}
+          {chartType === "bar" ? (
+            <BarChart
+              data={chartData}
+              margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+              onClick={canClick ? handleBarClick : undefined}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+              <XAxis
+                dataKey="name"
+                tick={{ fill: "#64748b", fontSize: 11 }}
+                axisLine={{ stroke: "rgba(255,255,255,0.06)" }}
+                cursor={canClick ? "pointer" : "default"}
               />
-            )}
-            <Bar
-              dataKey="simulated"
-              name="simulated"
-              fill="#fbbf24"
-              radius={[3, 3, 0, 0]}
-              opacity={0.85}
-              className={level !== "day" ? "cursor-pointer hover:opacity-100" : ""}
-            />
-            {hasActual && (
+              <YAxis
+                tick={{ fill: "#64748b", fontSize: 11 }}
+                axisLine={{ stroke: "rgba(255,255,255,0.06)" }}
+                label={{ value: yLabel, angle: -90, position: "insideLeft", fill: "#64748b", fontSize: 10, dy: 50 }}
+              />
+              <Tooltip
+                content={<ComparisonTooltip unit={yUnit} hasActual={hasActual} />}
+                cursor={{ fill: "rgba(255,255,255,0.04)" }}
+              />
+              {hasActual && (
+                <Legend
+                  wrapperStyle={{ paddingTop: 8, fontSize: 11, color: "#94a3b8" }}
+                  formatter={(value) => value === "simulated" ? "Simulated" : "Actual"}
+                />
+              )}
               <Bar
-                dataKey="actual"
-                name="actual"
-                fill="#38bdf8"
+                dataKey="simulated"
+                name="simulated"
+                fill="#fbbf24"
                 radius={[3, 3, 0, 0]}
-                opacity={0.75}
+                opacity={0.85}
+                className={canClick ? "cursor-pointer hover:opacity-100" : ""}
               />
-            )}
-          </BarChart>
+              {hasActual && (
+                <Bar
+                  dataKey="actual"
+                  name="actual"
+                  fill="#38bdf8"
+                  radius={[3, 3, 0, 0]}
+                  opacity={0.75}
+                />
+              )}
+            </BarChart>
+          ) : (
+            <LineChart
+              data={chartData}
+              margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+              onClick={canClick ? handleBarClick : undefined}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+              <XAxis
+                dataKey="name"
+                tick={{ fill: "#64748b", fontSize: 11 }}
+                axisLine={{ stroke: "rgba(255,255,255,0.06)" }}
+                cursor={canClick ? "pointer" : "default"}
+              />
+              <YAxis
+                tick={{ fill: "#64748b", fontSize: 11 }}
+                axisLine={{ stroke: "rgba(255,255,255,0.06)" }}
+                label={{ value: yLabel, angle: -90, position: "insideLeft", fill: "#64748b", fontSize: 10, dy: 50 }}
+              />
+              <Tooltip content={<ComparisonTooltip unit={yUnit} hasActual={hasActual} />} />
+              {hasActual && (
+                <Legend
+                  wrapperStyle={{ paddingTop: 8, fontSize: 11, color: "#94a3b8" }}
+                  formatter={(value) => value === "simulated" ? "Simulated" : "Actual"}
+                />
+              )}
+              <Line
+                type="monotone"
+                dataKey="simulated"
+                name="simulated"
+                stroke="#fbbf24"
+                strokeWidth={2}
+                dot={canClick ? { r: 4, fill: "#fbbf24" } : false}
+                activeDot={{ r: 6 }}
+                className={canClick ? "cursor-pointer" : ""}
+              />
+              {hasActual && (
+                <Line
+                  type="monotone"
+                  dataKey="actual"
+                  name="actual"
+                  stroke="#38bdf8"
+                  strokeWidth={2}
+                  dot={canClick ? { r: 4, fill: "#38bdf8" } : false}
+                  activeDot={{ r: 6 }}
+                />
+              )}
+            </LineChart>
+          )}
         </ResponsiveContainer>
       </div>
 

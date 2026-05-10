@@ -17,6 +17,9 @@ services:
       LOG_BASE_LEVEL: "INFO"
       LOG_STREAM_HANDLER: "True"
       OPENMETEO_TIMEOUT: "30"
+      PVGIS_TIMEOUT: "90"
+      # Virgülle ayrılmış gerçek domain listesi — boş bırakılırsa tüm originlere izin verilir
+      ALLOWED_ORIGINS: ""
     volumes:
       - backend_logs:/app/logs
     restart: unless-stopped

@@ -71,6 +71,18 @@ function defaultInverter(): InverterConfig {
   return { source: "database", db_name: "CECInverter", inverter_name: "", inverter_display: "", manual_params_json: '{"pdc0":5000,"eta_inv_nom":0.96}' };
 }
 
+const DEMO_ADVANCED = {
+  flatTilt: 30,
+  flatAzimuth: 180,
+  flatMps: 12,
+  flatStrings: 1,
+  module: { source: "manual" as const, db_name: "CECMod", module_name: "", module_display: "", manual_params_json: '{"pdc0":400,"gamma_pdc":-0.004}' },
+  temp: { source: "lookup" as const, model: "sapm", config: "open_rack_glass_polymer", manual_params_json: '{"a":-3.56,"b":-0.075,"deltaT":3}' },
+  inverter: { source: "manual" as const, db_name: "CECInverter", inverter_name: "", inverter_display: "", manual_params_json: '{"pdc0":5000,"eta_inv_nom":0.96}' },
+  dcModel: "pvwatts",
+  acModel: "pvwatts",
+};
+
 function SAMSearch({ db, placeholder, selectedName, selectedDisplay, onSelect, onClear }: {
   db: string; placeholder?: string;
   selectedName: string; selectedDisplay: string;
@@ -338,19 +350,33 @@ export default function HistoricalPage() {
   const effectiveArea = areaMode === "m2" ? areaM2 : areaA * areaB;
 
   /* ── Advanced mode ────────────────────────────────── */
-  const [flatTilt, setFlatTilt] = useState(35);
-  const [flatAzimuth, setFlatAzimuth] = useState(180);
-  const [flatMps, setFlatMps] = useState(10);
-  const [flatStrings, setFlatStrings] = useState(2);
-  const [advModule, setAdvModule] = useState<ModuleConfig>(defaultModule());
-  const [advTemp, setAdvTemp] = useState<TempConfig>(defaultTemp());
-  const [advInverter, setAdvInverter] = useState<InverterConfig>(defaultInverter());
-  const [dcModel, setDcModel] = useState("cec");
-  const [acModel, setAcModel] = useState("sandia");
-  const [showMCConfig, setShowMCConfig] = useState(false);
+  const [flatTilt, setFlatTilt] = useState(DEMO_ADVANCED.flatTilt);
+  const [flatAzimuth, setFlatAzimuth] = useState(DEMO_ADVANCED.flatAzimuth);
+  const [flatMps, setFlatMps] = useState(DEMO_ADVANCED.flatMps);
+  const [flatStrings, setFlatStrings] = useState(DEMO_ADVANCED.flatStrings);
+  const [advModule, setAdvModule] = useState<ModuleConfig>(DEMO_ADVANCED.module);
+  const [advTemp, setAdvTemp] = useState<TempConfig>(DEMO_ADVANCED.temp);
+  const [advInverter, setAdvInverter] = useState<InverterConfig>(DEMO_ADVANCED.inverter);
+  const [dcModel, setDcModel] = useState(DEMO_ADVANCED.dcModel);
+  const [acModel, setAcModel] = useState(DEMO_ADVANCED.acModel);
+  const [showMCConfig, setShowMCConfig] = useState(true);
   const [showModuleSection, setShowModuleSection] = useState(true);
-  const [showTempSection, setShowTempSection] = useState(false);
+  const [showTempSection, setShowTempSection] = useState(true);
   const [showInverterSection, setShowInverterSection] = useState(true);
+
+  const resetAdvanced = () => {
+    setFlatTilt(DEMO_ADVANCED.flatTilt);
+    setFlatAzimuth(DEMO_ADVANCED.flatAzimuth);
+    setFlatMps(DEMO_ADVANCED.flatMps);
+    setFlatStrings(DEMO_ADVANCED.flatStrings);
+    setAdvModule(DEMO_ADVANCED.module);
+    setAdvTemp(DEMO_ADVANCED.temp);
+    setAdvInverter(DEMO_ADVANCED.inverter);
+    setDcModel(DEMO_ADVANCED.dcModel);
+    setAcModel(DEMO_ADVANCED.acModel);
+    setResult(null);
+    setError(null);
+  };
 
   useEffect(() => { if (DC_MODEL_HINTS[advModule.db_name]) setDcModel(DC_MODEL_HINTS[advModule.db_name]); }, [advModule.db_name]);
   useEffect(() => { if (AC_MODEL_HINTS[advInverter.db_name]) setAcModel(AC_MODEL_HINTS[advInverter.db_name]); }, [advInverter.db_name]);
@@ -484,7 +510,7 @@ export default function HistoricalPage() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-6">
 
         {/* ════ Top section: Map + Params ════ */}
-        <div className="grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-5">
+        <div className="grid grid-cols-1 lg:grid-cols-[2fr_340px] gap-5">
 
           {/* ── Left: Map ── */}
           <div className="glass-card p-0 overflow-hidden">
@@ -492,7 +518,7 @@ export default function HistoricalPage() {
               <MapPin className="h-4 w-4 text-amber-400" />
               <h2 className="text-sm font-semibold text-slate-200">{tr("Location", "Konum Seçimi")}</h2>
             </div>
-            <MapPicker latitude={lat} longitude={lng} onLocationChange={handleMapChange} height={360} />
+            <MapPicker latitude={lat} longitude={lng} onLocationChange={handleMapChange} height={450} />
             <div className="px-4 py-2.5 border-t border-white/[0.06] flex items-center gap-3 text-xs text-slate-500">
               <MapPin className="h-3 w-3 text-amber-400 flex-shrink-0" />
               {lat !== 38.4192 || lng !== 27.1287
@@ -726,6 +752,10 @@ export default function HistoricalPage() {
             <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06]">
               <Settings className="h-4 w-4 text-amber-400" />
               <h2 className="text-sm font-semibold text-slate-200">{tr("Advanced Component Config", "Gelişmiş Bileşen Ayarları")}</h2>
+              <button type="button" onClick={resetAdvanced}
+                className="ml-auto flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium border border-white/[0.1] text-slate-400 hover:border-amber-400/30 hover:text-amber-400 transition-all">
+                <X className="h-3 w-3" />{tr("Reset", "Sıfırla")}
+              </button>
             </div>
             <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-0 divide-y md:divide-y-0 md:divide-x divide-white/[0.05]">
               {/* Module */}

@@ -2,9 +2,10 @@
 
 import { useMemo, useState, useEffect } from "react";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart, Bar, LineChart, Line,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
-import { ChevronLeft, Zap } from "lucide-react";
+import { ChevronLeft, Zap, BarChart3, TrendingUp } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════
    Types
@@ -27,7 +28,6 @@ const MONTH_LONG  = ["January","February","March","April","May","June",
                      "July","August","September","October","November","December"];
 
 function parseUTC(dt: string): Date {
-  // Parse "2019-03-15T14:00:00" treating it as local (display only)
   return new Date(dt);
 }
 
@@ -60,6 +60,7 @@ function EnergyTooltip({ active, payload, label, unit, accentColor }: any) {
 export default function EnergyDrillChart({ hourlyData, annualKwh }: EnergyDrillChartProps) {
   const [level, setLevel] = useState<DrillLevel>("year");
   const [isDark, setIsDark] = useState(true);
+  const [chartType, setChartType] = useState<"bar" | "line">("bar");
 
   useEffect(() => {
     const check = () => setIsDark(!document.documentElement.classList.contains("light"));
@@ -70,8 +71,8 @@ export default function EnergyDrillChart({ hourlyData, annualKwh }: EnergyDrillC
   }, []);
 
   const barColor = isDark ? "#fbbf24" : "#0284c7";
-  const [selMonth, setSelMonth] = useState<number | null>(null); // 0-based
-  const [selDay, setSelDay] = useState<number | null>(null);     // 1-based
+  const [selMonth, setSelMonth] = useState<number | null>(null);
+  const [selDay, setSelDay] = useState<number | null>(null);
 
   /* ── Pre-index hourly data ──────────────────────────── */
   const indexed = useMemo(() => {
@@ -151,10 +152,16 @@ export default function EnergyDrillChart({ hourlyData, annualKwh }: EnergyDrillC
 
   /* ── Click hint ─────────────────────────────────────── */
   const hint = level === "year"
-    ? "Click a month bar to see daily breakdown"
+    ? "Click a month to see daily breakdown"
     : level === "month"
-      ? "Click a day bar to see hourly profile"
+      ? "Click a day to see hourly profile"
       : null;
+
+  /* ── Period type label ──────────────────────────────── */
+  const periodLabel =
+    level === "year" ? "Annual production"
+    : level === "month" ? "Monthly production"
+    : "Daily production";
 
   /* ── Breadcrumb ─────────────────────────────────────── */
   const crumb =
@@ -165,15 +172,20 @@ export default function EnergyDrillChart({ hourlyData, annualKwh }: EnergyDrillC
 
   if (!hourlyData.length) return null;
 
+  const canClick = level !== "day";
+
   return (
     <div className="glass-card">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
             <Zap className="h-4 w-4 text-amber-400" />
             Energy Output
           </h3>
+          <span className="text-[10px] px-2 py-0.5 rounded-full border border-amber-400/20 text-amber-400/80 bg-amber-400/[0.06]">
+            {periodLabel}
+          </span>
           {level !== "year" && (
             <button
               type="button"
@@ -188,40 +200,86 @@ export default function EnergyDrillChart({ hourlyData, annualKwh }: EnergyDrillC
             <span className="text-xs text-slate-400 font-medium">{crumb}</span>
           )}
         </div>
-        {hint && (
-          <span className="text-[10px] text-slate-600 italic hidden sm:block">{hint}</span>
-        )}
+        <div className="flex items-center gap-2">
+          {hint && (
+            <span className="text-[10px] text-slate-600 italic hidden sm:block">{hint}</span>
+          )}
+          {/* Chart type toggle */}
+          <div className="flex gap-0.5 p-0.5 rounded-lg bg-white/[0.04] border border-white/[0.06]">
+            <button type="button" onClick={() => setChartType("bar")}
+              className={`p-1.5 rounded-md transition-all ${chartType === "bar" ? "bg-amber-400 text-slate-900" : "text-slate-400 hover:text-white"}`}
+              title="Bar chart">
+              <BarChart3 className="h-3.5 w-3.5" />
+            </button>
+            <button type="button" onClick={() => setChartType("line")}
+              className={`p-1.5 rounded-md transition-all ${chartType === "line" ? "bg-amber-400 text-slate-900" : "text-slate-400 hover:text-white"}`}
+              title="Line chart">
+              <TrendingUp className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Chart */}
       <div style={{ height: 300 }}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={chartData}
-            margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
-            onClick={level !== "day" ? handleBarClick : undefined}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-            <XAxis
-              dataKey="name"
-              tick={{ fill: "#64748b", fontSize: 11 }}
-              axisLine={{ stroke: "rgba(255,255,255,0.06)" }}
-              cursor={level !== "day" ? "pointer" : "default"}
-            />
-            <YAxis
-              tick={{ fill: "#64748b", fontSize: 11 }}
-              axisLine={{ stroke: "rgba(255,255,255,0.06)" }}
-              label={{ value: yLabel, angle: -90, position: "insideLeft", fill: "#64748b", fontSize: 10, dy: 50 }}
-            />
-            <Tooltip content={<EnergyTooltip unit={yUnit} accentColor={barColor} />} cursor={{ fill: "rgba(255,255,255,0.04)" }} />
-            <Bar
-              dataKey="value"
-              fill={barColor}
-              radius={[4, 4, 0, 0]}
-              opacity={0.85}
-              className={level !== "day" ? "cursor-pointer hover:opacity-100" : ""}
-            />
-          </BarChart>
+          {chartType === "bar" ? (
+            <BarChart
+              data={chartData}
+              margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+              onClick={canClick ? handleBarClick : undefined}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+              <XAxis
+                dataKey="name"
+                tick={{ fill: "#64748b", fontSize: 11 }}
+                axisLine={{ stroke: "rgba(255,255,255,0.06)" }}
+                cursor={canClick ? "pointer" : "default"}
+              />
+              <YAxis
+                tick={{ fill: "#64748b", fontSize: 11 }}
+                axisLine={{ stroke: "rgba(255,255,255,0.06)" }}
+                label={{ value: yLabel, angle: -90, position: "insideLeft", fill: "#64748b", fontSize: 10, dy: 50 }}
+              />
+              <Tooltip content={<EnergyTooltip unit={yUnit} accentColor={barColor} />} cursor={{ fill: "rgba(255,255,255,0.04)" }} />
+              <Bar
+                dataKey="value"
+                fill={barColor}
+                radius={[4, 4, 0, 0]}
+                opacity={0.85}
+                className={canClick ? "cursor-pointer hover:opacity-100" : ""}
+              />
+            </BarChart>
+          ) : (
+            <LineChart
+              data={chartData}
+              margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+              onClick={canClick ? handleBarClick : undefined}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+              <XAxis
+                dataKey="name"
+                tick={{ fill: "#64748b", fontSize: 11 }}
+                axisLine={{ stroke: "rgba(255,255,255,0.06)" }}
+                cursor={canClick ? "pointer" : "default"}
+              />
+              <YAxis
+                tick={{ fill: "#64748b", fontSize: 11 }}
+                axisLine={{ stroke: "rgba(255,255,255,0.06)" }}
+                label={{ value: yLabel, angle: -90, position: "insideLeft", fill: "#64748b", fontSize: 10, dy: 50 }}
+              />
+              <Tooltip content={<EnergyTooltip unit={yUnit} accentColor={barColor} />} />
+              <Line
+                type="monotone"
+                dataKey="value"
+                stroke={barColor}
+                strokeWidth={2}
+                dot={level !== "day" ? { r: 4, fill: barColor } : false}
+                activeDot={{ r: 6 }}
+                className={canClick ? "cursor-pointer" : ""}
+              />
+            </LineChart>
+          )}
         </ResponsiveContainer>
       </div>
 

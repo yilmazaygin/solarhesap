@@ -64,7 +64,8 @@ def _summary(df: pd.DataFrame, cols: list[str]) -> dict[str, float]:
     result: dict[str, float] = {}
     for col in irr_cols:
         series = df[col].replace([np.inf, -np.inf], np.nan).fillna(0.0).clip(lower=0.0)
-        result[f"annual_{col}_kwh_m2"] = round(float(series.sum() / 1000.0), 2)
+        result[f"total_{col}_kwh_m2"] = round(float(series.sum() / 1000.0), 2)
+        result[f"avg_{col}_w_m2"] = round(float(series.mean()), 2)
         result[f"peak_{col}_w_m2"] = round(float(series.max()), 2)
     return result
 
@@ -78,8 +79,8 @@ def _raw_instesre_bird(req: GenerateIrradianceRequest) -> pd.DataFrame:
 
     return create_bird_df(
         lat=req.latitude, lon=req.longitude, elevation=req.elevation,
-        start_date=date(req.start_year, 1, 1),
-        end_date=date(req.end_year, 12, 31),
+        start_date=req.resolved_start,
+        end_date=req.resolved_end,
         ozone=req.ozone, aod500=req.aod500, aod380=req.aod380,
         albedo=req.albedo, solar_constant=req.solar_constant,
         timezone=req.timezone, pvlib_format=True,
@@ -91,8 +92,8 @@ def _raw_ineichen(req: GenerateIrradianceRequest) -> pd.DataFrame:
 
     return create_ineichen_df(
         lat=req.latitude, lon=req.longitude, elevation=req.elevation,
-        start_date=date(req.start_year, 1, 1),
-        end_date=date(req.end_year, 12, 31),
+        start_date=req.resolved_start,
+        end_date=req.resolved_end,
         timezone=req.timezone, pvlib_format=True,
     )
 
@@ -102,8 +103,8 @@ def _raw_simplified_solis(req: GenerateIrradianceRequest) -> pd.DataFrame:
 
     return create_simplified_solis_df(
         lat=req.latitude, lon=req.longitude, elevation=req.elevation,
-        start_date=date(req.start_year, 1, 1),
-        end_date=date(req.end_year, 12, 31),
+        start_date=req.resolved_start,
+        end_date=req.resolved_end,
         aod700=req.aod700, timezone=req.timezone, pvlib_format=True,
     )
 
@@ -113,8 +114,8 @@ def _raw_pvlib_bird(req: GenerateIrradianceRequest) -> pd.DataFrame:
 
     return create_pvlib_bird_df(
         lat=req.latitude, lon=req.longitude, elevation=req.elevation,
-        start_date=date(req.start_year, 1, 1),
-        end_date=date(req.end_year, 12, 31),
+        start_date=req.resolved_start,
+        end_date=req.resolved_end,
         ozone=req.ozone, aod500=req.aod500, aod380=req.aod380,
         albedo=req.albedo, asymmetry=req.asymmetry,
         timezone=req.timezone, pvlib_format=True,

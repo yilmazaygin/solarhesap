@@ -3,7 +3,7 @@
 
 from typing import List, Optional
 
-from pydantic import model_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -19,8 +19,15 @@ class Settings(BaseSettings):
     APP_DEBUG: bool = False
 
     # Production'da tarayıcının ulaştığı gerçek domain — nginx arkasında olsa bile
-    # browser CORS header kontrolü yapar. Örnek: https://solarhesap.com
+    # browser CORS header kontrolü yapar. Virgülle ayır: https://solarhesap.com,https://www.solarhesap.com
     ALLOWED_ORIGINS: List[str] = []
+
+    @field_validator("ALLOWED_ORIGINS", mode="before")
+    @classmethod
+    def parse_origins(cls, v: object) -> List[str]:
+        if isinstance(v, str):
+            return [o.strip() for o in v.split(",") if o.strip()]
+        return v  # type: ignore[return-value]
 
     PVGIS_BASE_URL: str = "https://re.jrc.ec.europa.eu/api/v5_3/"
     OPEN_METEO_BASE_URL: str = "https://archive-api.open-meteo.com/v1/archive"

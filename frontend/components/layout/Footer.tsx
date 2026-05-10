@@ -13,7 +13,7 @@ export default function Footer() {
             <span className="text-xs text-slate-500">v0.2</span>
           </div>
           <a
-            href="https://github.com/yilmaygin/solarhesap"
+            href="https://github.com/yilmazaygin/solarhesap"
             target="_blank"
             rel="noreferrer"
             className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors"

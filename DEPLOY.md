@@ -121,7 +121,7 @@ solarhesap-nginx-1       Up
 ## 7. Verify
 
 ```bash
-curl http://localhost/api/v1/
+curl http://localhost/api/v1/health
 # Expected: {"status":"ok","app":"Solarhesap","version":"v0.2.0"}
 ```
 

@@ -168,7 +168,7 @@ All routes are prefixed with `/api/v1`. API docs available at `/docs` and `/redo
 | Method | Path | Description |
 |---|---|---|
 | GET | `/solar-tools/sam-search` | Search SAM module/inverter database |
-| GET | `/` | Health check (`{"status":"ok"}`) |
+| GET | `/api/v1/health` | Health check (`{"status":"ok"}`) |
 
 ---
 
@@ -226,7 +226,7 @@ First build takes 5–10 minutes (Python dependencies + Next.js compilation).
 ### 4. Verify
 
 ```bash
-curl http://localhost/api/v1/
+curl http://localhost/api/v1/health
 # → {"status":"ok","app":"Solarhesap","version":"v0.2.0"}
 ```
 

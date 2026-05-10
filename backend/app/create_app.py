@@ -45,6 +45,7 @@ def create_app() -> FastAPI:
     app.include_router(solar_tools_router, prefix="/api/v1")
 
     @app.get("/", tags=["Health"])
+    @app.get("/api/v1/health", tags=["Health"])
     def health_check():
         return {
             "status": "ok",

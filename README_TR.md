@@ -168,7 +168,7 @@ Tüm rotalar `/api/v1` önekini taşır. `APP_ENV=development` iken `/docs` ve `
 | Metot | Yol | Açıklama |
 |---|---|---|
 | GET | `/solar-tools/sam-search` | SAM modül/evirici veritabanı arama |
-| GET | `/` | Sağlık kontrolü (`{"status":"ok"}`) |
+| GET | `/api/v1/health` | Sağlık kontrolü (`{"status":"ok"}`) |
 
 ---
 
@@ -226,7 +226,7 @@ docker compose -f docker-compose.yml up -d --build
 ### 4. Doğrula
 
 ```bash
-curl http://localhost/api/v1/
+curl http://localhost/api/v1/health
 # → {"status":"ok","app":"Solarhesap","version":"v0.2.0"}
 ```
 

@@ -18,7 +18,6 @@ services:
       LOG_STREAM_HANDLER: "True"
       OPENMETEO_TIMEOUT: "30"
       PVGIS_TIMEOUT: "90"
-      ALLOWED_ORIGINS: ""
     volumes:
       - backend_logs:/app/logs
     restart: unless-stopped

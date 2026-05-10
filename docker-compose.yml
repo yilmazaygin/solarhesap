@@ -18,7 +18,6 @@ services:
       LOG_STREAM_HANDLER: "True"
       OPENMETEO_TIMEOUT: "30"
       PVGIS_TIMEOUT: "90"
-      # Virgülle ayrılmış gerçek domain listesi — boş bırakılırsa tüm originlere izin verilir
       ALLOWED_ORIGINS: ""
     volumes:
       - backend_logs:/app/logs
@@ -34,7 +33,6 @@ services:
     build:
       context: ./frontend
       args:
-        # Tarayıcı istekleri nginx üzerinden geçtiği için relative URL yeterli
         NEXT_PUBLIC_API_BASE_URL: "/api/v1"
     expose:
       - "3000"
@@ -47,10 +45,8 @@ services:
     build:
       context: ./nginx
     ports:
-      # Sunucuda 80:80 olarak değiştir (bkz. DEPLOY.md)
-      - "9090:80"
+      - "80:80"
     environment:
-      # Bir IP'nin dakikadaki maksimum istek sayısı — değiştirmek için bu satırı düzenle
       API_RATE_LIMIT: "30"
     depends_on:
       - frontend

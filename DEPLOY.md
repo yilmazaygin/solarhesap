@@ -85,23 +85,7 @@ LOG_STREAM_HANDLER=True
 
 ---
 
-## 5. Configure the Port
-
-In `docker-compose.yml`, the nginx service exposes port `9090:80` by default.
-For production on port 80:
-
-```bash
-# Edit docker-compose.yml:
-#   - "9090:80"  ← change this to
-#   - "80:80"
-nano docker-compose.yml
-```
-
-> If another service (Traefik, Apache, host nginx) is already using port 80, either stop it or keep Solarhesap on a different port.
-
----
-
-## 6. (Optional) Adjust Rate Limiting
+## 5. (Optional) Adjust Rate Limiting
 
 In `docker-compose.yml` under the `nginx` service:
 
@@ -111,7 +95,7 @@ API_RATE_LIMIT: "30"   # max requests per minute per IP
 
 ---
 
-## 7. Build and Start
+## 6. Build and Start
 
 ```bash
 docker compose -f docker-compose.yml up -d --build
@@ -138,7 +122,7 @@ solarhesap-nginx-1       Up
 
 ---
 
-## 8. Verify
+## 7. Verify
 
 ```bash
 curl http://localhost/api/v1/
@@ -149,17 +133,17 @@ Open `http://server-ip` in your browser — the application should load.
 
 ---
 
-## 9. HTTPS with Let's Encrypt
+## 8. HTTPS with Let's Encrypt
 
 If you have a domain name, add a free SSL certificate via Certbot.
 
-### 9a. Install Certbot
+### 8a. Install Certbot
 
 ```bash
 sudo apt install -y certbot
 ```
 
-### 9b. Obtain a Certificate
+### 8b. Obtain a Certificate
 
 Temporarily stop nginx to free port 80:
 
@@ -171,7 +155,7 @@ docker compose start nginx
 
 Certificates are saved to `/etc/letsencrypt/live/yourdomain.com/`.
 
-### 9c. Update nginx Configuration
+### 8c. Update nginx Configuration
 
 Edit `nginx/nginx.conf.template`:
 
@@ -233,7 +217,7 @@ server {
 }
 ```
 
-### 9d. Mount Certificates into nginx
+### 8d. Mount Certificates into nginx
 
 Add a volume to the `nginx` service in `docker-compose.yml`:
 
@@ -252,7 +236,7 @@ Rebuild nginx:
 docker compose -f docker-compose.yml up -d --build nginx
 ```
 
-### 9e. Update ALLOWED_ORIGINS
+### 8e. Update ALLOWED_ORIGINS
 
 In `backend/.env`:
 
@@ -266,7 +250,7 @@ Then restart the backend:
 docker compose -f docker-compose.yml up -d backend
 ```
 
-### 9f. Auto-Renewal
+### 8f. Auto-Renewal
 
 ```bash
 sudo crontab -e
@@ -280,7 +264,7 @@ Add this line:
 
 ---
 
-## 10. Updating the Application
+## 9. Updating the Application
 
 ```bash
 cd /opt/solarhesap
@@ -296,7 +280,7 @@ docker compose -f docker-compose.yml up -d --build backend
 
 ---
 
-## 11. Viewing Logs
+## 10. Viewing Logs
 
 ```bash
 # Live logs for all services

@@ -27,23 +27,16 @@ def create_app() -> FastAPI:
 
     # --- CORS middleware (allow frontend access) ---
     # allow_credentials=True is incompatible with allow_origins=["*"] per the CORS spec.
-    # In dev, wildcard origins are fine without credentials.
-    if is_dev:
-        app.add_middleware(
-            CORSMiddleware,
-            allow_origins=["*"],
-            allow_credentials=False,
-            allow_methods=["*"],
-            allow_headers=["*"],
-        )
-    else:
-        app.add_middleware(
-            CORSMiddleware,
-            allow_origins=settings.ALLOWED_ORIGINS or ["*"],
-            allow_credentials=bool(settings.ALLOWED_ORIGINS),
-            allow_methods=["GET", "POST", "OPTIONS"],
-            allow_headers=["Content-Type", "Authorization"],
-        )
+    # Backend is behind nginx and not directly exposed; wildcard is acceptable when
+    # ALLOWED_ORIGINS is not configured, but credentials are never sent in that case.
+    explicit_origins = settings.ALLOWED_ORIGINS
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=explicit_origins if explicit_origins else ["*"],
+        allow_credentials=bool(explicit_origins),
+        allow_methods=["GET", "POST", "OPTIONS"] if not is_dev else ["*"],
+        allow_headers=["Content-Type", "Authorization"] if not is_dev else ["*"],
+    )
 
     # --- Register custom error handlers ---
     from app.core.error_handlers import register_error_handlers

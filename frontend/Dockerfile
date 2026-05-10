@@ -1,4 +1,3 @@
-# Geliştirme hot-reload için kullanılan stage (docker-compose.override.yml)
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package*.json ./

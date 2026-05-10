@@ -18,14 +18,23 @@ class Settings(BaseSettings):
     APP_ENV: str = "production"
     APP_DEBUG: bool = False
 
-    # Production'da tarayıcının ulaştığı gerçek domain — nginx arkasında olsa bile
-    # browser CORS header kontrolü yapar. Virgülle ayır: https://solarhesap.com,https://www.solarhesap.com
+    # Real domain(s) the browser reaches in production — even behind nginx the
+    # browser enforces CORS headers. Comma-separated: https://solarhesap.com,https://www.solarhesap.com
     ALLOWED_ORIGINS: List[str] = []
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod
     def parse_origins(cls, v: object) -> List[str]:
         if isinstance(v, str):
+            v = v.strip()
+            if not v or v == "[]":
+                return []
+            if v.startswith("["):
+                import json
+                try:
+                    return [str(o) for o in json.loads(v)]
+                except (json.JSONDecodeError, ValueError):
+                    pass
             return [o.strip() for o in v.split(",") if o.strip()]
         return v  # type: ignore[return-value]
 

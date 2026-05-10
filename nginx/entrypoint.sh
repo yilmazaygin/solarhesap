@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-# Sadece API_RATE_LIMIT değişkenini template'e uygula.
-# Nginx değişkenleri ($host, $remote_addr vb.) dokunulmadan kalır.
+# Only substitute API_RATE_LIMIT in the template.
+# Nginx variables ($host, $remote_addr, etc.) are left untouched.
 envsubst '$API_RATE_LIMIT' < /etc/nginx/nginx.conf.template > /etc/nginx/conf.d/default.conf
 
 exec "$@"

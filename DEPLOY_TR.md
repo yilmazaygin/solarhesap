@@ -85,23 +85,7 @@ LOG_STREAM_HANDLER=True
 
 ---
 
-## 5. Portu Yapılandır
-
-`docker-compose.yml` dosyasında nginx servisi varsayılan olarak `9090:80` portunu kullanır.
-Üretimde 80. portu açmak için:
-
-```bash
-# docker-compose.yml içinde:
-#   - "9090:80"  ← bunu
-#   - "80:80"    ← buna çevir
-nano docker-compose.yml
-```
-
-> 80. portu başka bir servis (Traefik, Apache, host nginx) kullanıyorsa ya o servisi durdur ya da Solarhesap'ı farklı bir portta bırak.
-
----
-
-## 6. (İsteğe Bağlı) Rate Limit Ayarla
+## 5. (İsteğe Bağlı) Rate Limit Ayarla
 
 `docker-compose.yml` içindeki `nginx` servisinin `environment` bölümünde:
 
@@ -111,7 +95,7 @@ API_RATE_LIMIT: "30"   # dakikada IP başına maksimum istek
 
 ---
 
-## 7. Servisleri Derle ve Başlat
+## 6. Servisleri Derle ve Başlat
 
 ```bash
 docker compose -f docker-compose.yml up -d --build
@@ -138,7 +122,7 @@ solarhesap-nginx-1       Up
 
 ---
 
-## 8. Çalıştığını Doğrula
+## 7. Çalıştığını Doğrula
 
 ```bash
 curl http://localhost/api/v1/
@@ -149,17 +133,17 @@ Tarayıcıdan `http://sunucu-ip` adresine gidildiğinde uygulama açılmalıdır
 
 ---
 
-## 9. HTTPS — Let's Encrypt ile SSL Sertifikası
+## 8. HTTPS — Let's Encrypt ile SSL Sertifikası
 
 Bir alan adın varsa Certbot ile ücretsiz SSL sertifikası ekleyebilirsin.
 
-### 9a. Certbot'u Kur
+### 8a. Certbot'u Kur
 
 ```bash
 sudo apt install -y certbot
 ```
 
-### 9b. Sertifika Al
+### 8b. Sertifika Al
 
 80. portu serbest bırakmak için nginx'i geçici olarak durdur:
 
@@ -171,7 +155,7 @@ docker compose start nginx
 
 Sertifikalar `/etc/letsencrypt/live/alanadiniz.com/` altına kaydedilir.
 
-### 9c. Nginx Yapılandırmasını Güncelle
+### 8c. Nginx Yapılandırmasını Güncelle
 
 `nginx/nginx.conf.template` dosyasını aşağıdaki gibi düzenle:
 
@@ -233,7 +217,7 @@ server {
 }
 ```
 
-### 9d. Sertifika Dosyalarını nginx Container'ına Bağla
+### 8d. Sertifika Dosyalarını nginx Container'ına Bağla
 
 `docker-compose.yml` içindeki `nginx` servisine volume ekle:
 
@@ -252,7 +236,7 @@ nginx'i yeniden derle ve başlat:
 docker compose -f docker-compose.yml up -d --build nginx
 ```
 
-### 9e. ALLOWED_ORIGINS'i Güncelle
+### 8e. ALLOWED_ORIGINS'i Güncelle
 
 `backend/.env` dosyasında:
 
@@ -266,7 +250,7 @@ Backend'i yeniden başlat:
 docker compose -f docker-compose.yml up -d backend
 ```
 
-### 9f. Otomatik Yenileme
+### 8f. Otomatik Yenileme
 
 ```bash
 sudo crontab -e
@@ -280,7 +264,7 @@ sudo crontab -e
 
 ---
 
-## 10. Güncelleme
+## 9. Güncelleme
 
 ```bash
 cd /opt/solarhesap
@@ -296,7 +280,7 @@ docker compose -f docker-compose.yml up -d --build backend
 
 ---
 
-## 11. Log Yönetimi
+## 10. Log Yönetimi
 
 ```bash
 # Tüm servisler için canlı loglar

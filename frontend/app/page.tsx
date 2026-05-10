@@ -11,25 +11,10 @@ import {
   FlaskConical,
   ExternalLink,
   BarChart2,
-  Linkedin,
-  Globe,
 } from "lucide-react";
 import GlassCard from "@/components/shared/GlassCard";
 import { useLanguage } from "@/context/LanguageContext";
 import { translations } from "@/lib/translations";
-
-const TEAM = [
-  {
-    name: "Yılmaz Eray",
-    linkedin: "https://linkedin.com/in/yilmaz-eray",
-    website: "#",
-  },
-  {
-    name: "Yılmaz Aygın",
-    linkedin: "https://linkedin.com/in/yilmaz-aygin",
-    website: "#",
-  },
-];
 
 export default function HomePage() {
   const { t, language } = useLanguage();
@@ -142,48 +127,6 @@ export default function HomePage() {
             />
           </div>
         </div>
-        </div>
-      </section>
-
-      {/* Team Bar */}
-      <section className="relative border-y border-white/[0.04] bg-surface-950/50">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-0">
-
-            {/* Yılmaz Eray — mobile: name top, links below; desktop: [Web][LinkedIn] Name */}
-            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 animate-slide-up">
-              <p className="text-xl sm:text-2xl font-bold text-slate-100 order-first sm:order-last">{TEAM[0].name}</p>
-              <div className="flex items-center gap-3 order-last sm:order-first">
-                <a href={TEAM[0].website} target="_blank" rel="noreferrer"
-                  className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-cyan-400 transition-colors">
-                  <Globe className="h-4 w-4" /> Web
-                </a>
-                <a href={TEAM[0].linkedin} target="_blank" rel="noreferrer"
-                  className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-cyan-400 transition-colors">
-                  <Linkedin className="h-4 w-4" /> LinkedIn
-                </a>
-              </div>
-            </div>
-
-            {/* Divider — horizontal on mobile, vertical on desktop */}
-            <div className="w-16 h-px sm:w-px sm:h-14 bg-white/[0.08] sm:mx-8" />
-
-            {/* Yılmaz Aygın — mobile: name top, links below; desktop: Name [LinkedIn][Web] */}
-            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 animate-slide-up" style={{ animationDelay: "120ms" }}>
-              <p className="text-xl sm:text-2xl font-bold text-slate-100">{TEAM[1].name}</p>
-              <div className="flex items-center gap-3">
-                <a href={TEAM[1].linkedin} target="_blank" rel="noreferrer"
-                  className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-cyan-400 transition-colors">
-                  <Linkedin className="h-4 w-4" /> LinkedIn
-                </a>
-                <a href={TEAM[1].website} target="_blank" rel="noreferrer"
-                  className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-cyan-400 transition-colors">
-                  <Globe className="h-4 w-4" /> Web
-                </a>
-              </div>
-            </div>
-
-          </div>
         </div>
       </section>
 

@@ -211,7 +211,6 @@ Minimum changes for production:
 
 ```env
 APP_ENV=production
-ALLOWED_ORIGINS=https://yourdomain.com
 ```
 
 ### 3. Build and start
@@ -289,9 +288,8 @@ All runtime config lives in `backend/.env` (copy from `.env.example`).
 
 | Variable | Default | Description |
 |---|---|---|
-| `APP_ENV` | `production` | `development` enables `/docs`, `/redoc`, wildcard CORS |
+| `APP_ENV` | `production` | `development` enables `/docs`, `/redoc` |
 | `APP_VERSION` | `v0.2.0` | Shown in API health response |
-| `ALLOWED_ORIGINS` | _(empty)_ | Comma-separated allowed origins, e.g. `https://yourdomain.com,https://www.yourdomain.com`. Empty = wildcard (insecure) |
 | `PVGIS_BASE_URL` | `https://re.jrc.ec.europa.eu/api/v5_3/` | PVGIS API base URL |
 | `OPEN_METEO_BASE_URL` | `https://archive-api.open-meteo.com/v1/archive` | Open-Meteo archive URL |
 | `OPENMETEO_TIMEOUT` | `30` | HTTP timeout (seconds) for Open-Meteo requests |

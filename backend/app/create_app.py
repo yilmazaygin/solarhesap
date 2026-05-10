@@ -5,25 +5,10 @@ Creates and configures the FastAPI instance, registers routers, and sets
 up middleware.  Run with: ``uvicorn app.create_app:app --reload``
 """
 
-import json
-from typing import List
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.settings import settings
-
-
-def _parse_origins(raw: str) -> List[str]:
-    raw = raw.strip()
-    if not raw or raw == "[]":
-        return []
-    if raw.startswith("["):
-        try:
-            return [str(o) for o in json.loads(raw)]
-        except (json.JSONDecodeError, ValueError):
-            pass
-    return [o.strip() for o in raw.split(",") if o.strip()]
 
 
 def create_app() -> FastAPI:
@@ -40,17 +25,12 @@ def create_app() -> FastAPI:
         openapi_url="/openapi.json" if is_dev else None,
     )
 
-    # --- CORS middleware (allow frontend access) ---
-    # allow_credentials=True is incompatible with allow_origins=["*"] per the CORS spec.
-    # Backend is behind nginx and not directly exposed; wildcard is acceptable when
-    # ALLOWED_ORIGINS is not configured, but credentials are never sent in that case.
-    explicit_origins = _parse_origins(settings.ALLOWED_ORIGINS)
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=explicit_origins if explicit_origins else ["*"],
-        allow_credentials=bool(explicit_origins),
-        allow_methods=["GET", "POST", "OPTIONS"] if not is_dev else ["*"],
-        allow_headers=["Content-Type", "Authorization"] if not is_dev else ["*"],
+        allow_origins=["*"],
+        allow_credentials=False,
+        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_headers=["Content-Type"],
     )
 
     # --- Register custom error handlers ---

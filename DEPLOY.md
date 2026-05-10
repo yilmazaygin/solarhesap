@@ -73,10 +73,6 @@ Minimum required values:
 APP_ENV=production
 APP_VERSION=v0.2.0
 
-# Comma-separated list of allowed frontend origins (required for CORS in production)
-# Example: https://solarhesap.com,https://www.solarhesap.com
-ALLOWED_ORIGINS=https://yourdomain.com
-
 LOG_BASE_LEVEL=INFO
 LOG_STREAM_HANDLER=True
 ```
@@ -236,21 +232,7 @@ Rebuild nginx:
 docker compose -f docker-compose.yml up -d --build nginx
 ```
 
-### 8e. Update ALLOWED_ORIGINS
-
-In `backend/.env`:
-
-```env
-ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
-```
-
-Then restart the backend:
-
-```bash
-docker compose -f docker-compose.yml up -d backend
-```
-
-### 8f. Auto-Renewal
+### 8e. Auto-Renewal
 
 ```bash
 sudo crontab -e
@@ -302,6 +284,6 @@ docker run --rm -v solarhesap_backend_logs:/logs alpine ls /logs
 | Site not loading | `docker compose ps` — are all services `Up`? |
 | Backend won't start | `docker compose logs backend` — missing `.env` values? |
 | 429 Too Many Requests | Increase `API_RATE_LIMIT` in `docker-compose.yml` |
-| CORS error in browser | Check `ALLOWED_ORIGINS` in `backend/.env` (include protocol: `https://`) |
+| CORS error in browser | Check that the request goes through nginx (`/api/...`), not directly to backend |
 | Build takes too long | Normal for first build — Next.js + Python dependencies are downloaded |
 | Certificate errors | Check `/etc/letsencrypt/live/yourdomain.com/` permissions |

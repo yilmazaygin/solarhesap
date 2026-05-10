@@ -73,10 +73,6 @@ Zorunlu asgari değerler:
 APP_ENV=production
 APP_VERSION=v0.2.0
 
-# Virgülle ayrılmış izin verilen frontend domain'leri (üretimde CORS için zorunlu)
-# Örnek: https://solarhesap.com,https://www.solarhesap.com
-ALLOWED_ORIGINS=https://alanadiniz.com
-
 LOG_BASE_LEVEL=INFO
 LOG_STREAM_HANDLER=True
 ```
@@ -236,21 +232,7 @@ nginx'i yeniden derle ve başlat:
 docker compose -f docker-compose.yml up -d --build nginx
 ```
 
-### 8e. ALLOWED_ORIGINS'i Güncelle
-
-`backend/.env` dosyasında:
-
-```env
-ALLOWED_ORIGINS=https://alanadiniz.com,https://www.alanadiniz.com
-```
-
-Backend'i yeniden başlat:
-
-```bash
-docker compose -f docker-compose.yml up -d backend
-```
-
-### 8f. Otomatik Yenileme
+### 8e. Otomatik Yenileme
 
 ```bash
 sudo crontab -e
@@ -302,6 +284,6 @@ docker run --rm -v solarhesap_backend_logs:/logs alpine ls /logs
 | Site açılmıyor | `docker compose ps` — tüm servisler `Up` mı? |
 | Backend başlamıyor | `docker compose logs backend` — `.env` eksik değer var mı? |
 | 429 Too Many Requests | `API_RATE_LIMIT` değerini artır |
-| Tarayıcıda CORS hatası | `backend/.env` içindeki `ALLOWED_ORIGINS` değerini kontrol et (protokol dahil: `https://`) |
+| Tarayıcıda CORS hatası | İsteğin nginx üzerinden gittiğini kontrol et (`/api/...`), doğrudan backend'e değil |
 | Build çok uzun sürüyor | İlk build'de Next.js + Python bağımlılıkları indirilir — bu normaldir |
 | Sertifika hatası | `/etc/letsencrypt/live/alanadiniz.com/` klasörünün izinlerini kontrol et |

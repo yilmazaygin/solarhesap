@@ -18,10 +18,6 @@ class Settings(BaseSettings):
     APP_ENV: str = "production"
     APP_DEBUG: bool = False
 
-    # Comma-separated origins: https://solarhesap.com,https://www.solarhesap.com
-    # Kept as str so pydantic_settings never attempts JSON-decoding before we parse it.
-    ALLOWED_ORIGINS: str = ""
-
     PVGIS_BASE_URL: str = "https://re.jrc.ec.europa.eu/api/v5_3/"
     OPEN_METEO_BASE_URL: str = "https://archive-api.open-meteo.com/v1/archive"
 

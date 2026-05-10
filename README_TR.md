@@ -211,7 +211,6 @@ nano backend/.env
 
 ```env
 APP_ENV=production
-ALLOWED_ORIGINS=https://alanadiniz.com
 ```
 
 ### 3. Derle ve başlat
@@ -289,9 +288,8 @@ Tüm çalışma zamanı ayarları `backend/.env` dosyasındadır (`.env.example`
 
 | Değişken | Varsayılan | Açıklama |
 |---|---|---|
-| `APP_ENV` | `production` | `development` → `/docs`, `/redoc`, wildcard CORS etkinleşir |
+| `APP_ENV` | `production` | `development` → `/docs`, `/redoc` etkinleşir |
 | `APP_VERSION` | `v0.2.0` | API sağlık yanıtında görünür |
-| `ALLOWED_ORIGINS` | _(boş)_ | İzin verilen origin'ler, virgülle ayrılmış — ör. `https://alanadiniz.com,https://www.alanadiniz.com`. Boş = wildcard (güvensiz) |
 | `PVGIS_BASE_URL` | `https://re.jrc.ec.europa.eu/api/v5_3/` | PVGIS API taban URL'si |
 | `OPEN_METEO_BASE_URL` | `https://archive-api.open-meteo.com/v1/archive` | Open-Meteo arşiv URL'si |
 | `OPENMETEO_TIMEOUT` | `30` | Open-Meteo istekleri için HTTP zaman aşımı (saniye) |

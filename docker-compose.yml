@@ -49,8 +49,10 @@ services:
     environment:
       API_RATE_LIMIT: "30"
     depends_on:
-      - frontend
-      - backend
+      frontend:
+        condition: service_started
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:

@@ -1,9 +1,9 @@
 # ./backend/app/core/settings.py
 """Application settings using Pydantic BaseSettings."""
 
-from typing import List, Optional
+from typing import Optional
 
-from pydantic import field_validator, model_validator
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -11,32 +11,16 @@ class Settings(BaseSettings):
     """Central configuration loaded from .env file."""
 
     APP_NAME: str = "Solarhesap"
-    APP_VERSION: str = "v0.1.0"
+    APP_VERSION: str = "v0.2.0"
     APP_DESCRIPTION: str = "Solarhesap is a Tübitak 2209 project"
     APP_HOST: str = "127.0.0.1"
     APP_PORT: int = 8000
     APP_ENV: str = "production"
     APP_DEBUG: bool = False
 
-    # Real domain(s) the browser reaches in production — even behind nginx the
-    # browser enforces CORS headers. Comma-separated: https://solarhesap.com,https://www.solarhesap.com
-    ALLOWED_ORIGINS: List[str] = []
-
-    @field_validator("ALLOWED_ORIGINS", mode="before")
-    @classmethod
-    def parse_origins(cls, v: object) -> List[str]:
-        if isinstance(v, str):
-            v = v.strip()
-            if not v or v == "[]":
-                return []
-            if v.startswith("["):
-                import json
-                try:
-                    return [str(o) for o in json.loads(v)]
-                except (json.JSONDecodeError, ValueError):
-                    pass
-            return [o.strip() for o in v.split(",") if o.strip()]
-        return v  # type: ignore[return-value]
+    # Comma-separated origins: https://solarhesap.com,https://www.solarhesap.com
+    # Kept as str so pydantic_settings never attempts JSON-decoding before we parse it.
+    ALLOWED_ORIGINS: str = ""
 
     PVGIS_BASE_URL: str = "https://re.jrc.ec.europa.eu/api/v5_3/"
     OPEN_METEO_BASE_URL: str = "https://archive-api.open-meteo.com/v1/archive"

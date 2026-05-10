@@ -197,7 +197,7 @@ All routes are prefixed with `/api/v1`. API docs available at `/docs` and `/redo
 
 ```bash
 git clone <repo-url>
-cd solarhesap-v0.2
+cd solarhesap
 ```
 
 ### 2. Configure environment

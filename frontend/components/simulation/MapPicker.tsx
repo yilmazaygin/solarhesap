@@ -7,7 +7,7 @@ interface MapPickerProps {
   latitude: number;
   longitude: number;
   onLocationChange: (lat: number, lng: number) => void;
-  height?: number;
+  height?: number | string;
 }
 
 export default function MapPicker({
@@ -16,6 +16,7 @@ export default function MapPicker({
   onLocationChange,
   height = 300,
 }: MapPickerProps) {
+  const heightStyle = typeof height === "number" ? `${height}px` : height;
   const mapRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapInstanceRef = useRef<any>(null);
@@ -127,7 +128,7 @@ export default function MapPicker({
   if (!isClient) {
     return (
       <div
-        style={{ height: `${height}px` }}
+        style={{ height: heightStyle }}
         className="w-full rounded-none bg-white/[0.04] border-y border-white/[0.06] flex items-center justify-center"
       >
         <div className="flex items-center gap-2 text-slate-500">
@@ -144,7 +145,7 @@ export default function MapPicker({
       <div
         ref={mapRef}
         id="map-picker"
-        style={{ height: `${height}px`, zIndex: 1 }}
+        style={{ height: heightStyle, zIndex: 1 }}
         className="w-full"
       />
     </>

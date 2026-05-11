@@ -513,13 +513,15 @@ export default function HistoricalPage() {
         <div className="grid grid-cols-1 lg:grid-cols-[2fr_340px] gap-5">
 
           {/* ── Left: Map ── */}
-          <div className="glass-card p-0 overflow-hidden">
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06]">
+          <div className="glass-card p-0 overflow-hidden flex flex-col">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06] flex-shrink-0">
               <MapPin className="h-4 w-4 text-amber-400" />
               <h2 className="text-sm font-semibold text-slate-200">{tr("Location", "Konum Seçimi")}</h2>
             </div>
-            <MapPicker latitude={lat} longitude={lng} onLocationChange={handleMapChange} height={450} />
-            <div className="px-4 py-2.5 border-t border-white/[0.06] flex items-center gap-3 text-xs text-slate-500">
+            <div className="flex-1 min-h-0">
+              <MapPicker latitude={lat} longitude={lng} onLocationChange={handleMapChange} height="100%" />
+            </div>
+            <div className="px-4 py-2.5 border-t border-white/[0.06] flex items-center gap-3 text-xs text-slate-500 flex-shrink-0">
               <MapPin className="h-3 w-3 text-amber-400 flex-shrink-0" />
               {lat !== 38.4192 || lng !== 27.1287
                 ? <span className="font-mono">{lat.toFixed(4)}°{lat >= 0 ? "K" : "G"}, {lng.toFixed(4)}°{lng >= 0 ? "D" : "B"}</span>

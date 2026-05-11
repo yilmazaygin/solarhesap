@@ -595,7 +595,8 @@ function EndpointCard({ ep, isTr }: { ep: Endpoint; isTr: boolean }) {
               <h4 className="text-xs font-semibold mb-2 uppercase tracking-wider" style={{ color: "var(--text-primary)" }}>
                 {isTr ? "İstek Alanları" : "Request Fields"}
               </h4>
-              <div className="overflow-x-auto rounded-lg" style={{ border: "1px solid var(--border)" }}>
+              <div className="overflow-x-auto -mx-5 px-5 sm:mx-0 sm:px-0 rounded-lg">
+              <div className="min-w-[480px] sm:min-w-0 rounded-lg" style={{ border: "1px solid var(--border)" }}>
                 <table className="w-full text-xs">
                   <thead>
                     <tr style={{ background: "var(--bg-subtle-2)", borderBottom: "1px solid var(--border)" }}>
@@ -622,6 +623,7 @@ function EndpointCard({ ep, isTr }: { ep: Endpoint; isTr: boolean }) {
                     ))}
                   </tbody>
                 </table>
+              </div>
               </div>
             </div>
           )}
@@ -660,8 +662,8 @@ export default function ApiDocsPage() {
   const healthCurl = `curl "${BASE_URL}/health"`;
 
   return (
-    <main className="min-h-screen page-bg">
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+    <main className="min-h-screen page-bg pt-16 pb-16">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
         {/* ── Hero ── */}
         <div className="glass-card space-y-4">
@@ -688,7 +690,7 @@ export default function ApiDocsPage() {
                 {isTr ? "Temel URL" : "Base URL"}
               </p>
               <div className="flex items-center justify-between gap-2">
-                <code className="text-sm font-mono" style={{ color: "var(--accent)" }}>{BASE_URL}</code>
+                <code className="text-xs sm:text-sm font-mono break-all" style={{ color: "var(--accent)" }}>{BASE_URL}</code>
                 <CopyButton text={BASE_URL} />
               </div>
             </div>
@@ -725,31 +727,33 @@ export default function ApiDocsPage() {
         </div>
 
         {/* ── Category tabs ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 rounded-xl"
-          style={{ background: "var(--bg-subtle-2)", border: "1px solid var(--border)" }}>
-          {CATEGORIES.map((cat) => {
-            const isActive = activeCategory === cat.id;
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setActiveCategory(cat.id)}
-                className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all"
-                style={isActive
-                  ? { background: "var(--accent)", color: "#fff" }
-                  : { color: "var(--text-muted)", background: "transparent" }}
-              >
-                {cat.icon}
-                <span className="truncate">{isTr ? cat.label_tr : cat.label_en}</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0"
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="flex sm:grid sm:grid-cols-4 gap-1.5 p-1 rounded-xl min-w-max sm:min-w-0"
+            style={{ background: "var(--bg-subtle-2)", border: "1px solid var(--border)" }}>
+            {CATEGORIES.map((cat) => {
+              const isActive = activeCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setActiveCategory(cat.id)}
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap"
                   style={isActive
-                    ? { background: "rgba(0,0,0,0.2)", color: "#fff" }
-                    : { background: "var(--bg-subtle-3)", color: "var(--text-muted)" }}>
-                  {cat.endpoints.length}
-                </span>
-              </button>
-            );
-          })}
+                    ? { background: "var(--accent)", color: "#fff" }
+                    : { color: "var(--text-muted)", background: "transparent" }}
+                >
+                  {cat.icon}
+                  <span>{isTr ? cat.label_tr : cat.label_en}</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0"
+                    style={isActive
+                      ? { background: "rgba(0,0,0,0.2)", color: "#fff" }
+                      : { background: "var(--bg-subtle-3)", color: "var(--text-muted)" }}>
+                    {cat.endpoints.length}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* ── Endpoints ── */}

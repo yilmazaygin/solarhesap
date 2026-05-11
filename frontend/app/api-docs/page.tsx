@@ -156,8 +156,6 @@ const CATEGORIES: Category[] = [
           { name: "start_year", type: "int", required: false, default: "2015", desc_en: "First year of analysis (2005–2025)", desc_tr: "Analizin başlangıç yılı" },
           { name: "end_year", type: "int", required: false, default: "2020", desc_en: "Last year of analysis (2005–2025)", desc_tr: "Analizin bitiş yılı" },
           { name: "timezone", type: "string", required: false, default: "UTC", desc_en: "IANA timezone string", desc_tr: "IANA saat dilimi" },
-          { name: "avg_year_strategies", type: "string[]", required: false, default: '["combined"]', desc_en: "simple_mean | trimmed_mean | exponential_weighted | combined | super_avg_year | all", desc_tr: "Yıl ortalaması stratejileri" },
-          { name: "decay", type: "float", required: false, default: "0.90", desc_en: "Exponential decay factor for exponential_weighted strategy (0–1)", desc_tr: "Üstel ağırlıklı strateji için azalma faktörü" },
         ],
         example: {
           location: { latitude: 39.93, longitude: 32.86 },
@@ -267,9 +265,8 @@ const CATEGORIES: Category[] = [
           { name: "end_year", type: "int", required: false, default: "2020", desc_en: "Last year (max 2023)", desc_tr: "Bitiş yılı (max 2023)" },
           { name: "surface_tilt", type: "float", required: false, default: "0.0", desc_en: "Panel tilt angle (°)", desc_tr: "Panel eğim açısı (°)" },
           { name: "surface_azimuth", type: "float", required: false, default: "180.0", desc_en: "Panel azimuth (0=N, 180=S)", desc_tr: "Panel azimut (0=K, 180=G)" },
-          { name: "avg_year_strategies", type: "string[]", required: false, default: '["combined"]', desc_en: "Averaging strategies to apply", desc_tr: "Uygulanacak ortalama yıl stratejileri" },
         ],
-        example: { latitude: 39.93, longitude: 32.86, start_year: 2015, end_year: 2022, surface_tilt: 30, surface_azimuth: 180, avg_year_strategies: ["combined"] },
+        example: { latitude: 39.93, longitude: 32.86, start_year: 2015, end_year: 2022, surface_tilt: 30, surface_azimuth: 180 },
       },
       {
         method: "POST",
@@ -284,9 +281,8 @@ const CATEGORIES: Category[] = [
           { name: "start_year / end_year", type: "int", required: false, default: "2015 / 2020", desc_en: "Analysis range", desc_tr: "Analiz aralığı" },
           { name: "models", type: "string[]", required: false, default: '["instesre_bird","ineichen","simplified_solis","pvlib_bird"]', desc_en: "Models to include", desc_tr: "Dahil edilecek modeller" },
           { name: "include_pvgis_tmy", type: "bool", required: false, default: "true", desc_en: "Include PVGIS TMY in comparison", desc_tr: "Karşılaştırmaya PVGIS TMY'yi dahil et" },
-          { name: "avg_year_strategies", type: "string[]", required: false, default: '["combined"]', desc_en: "Strategies to apply", desc_tr: "Uygulanacak stratejiler" },
         ],
-        example: { latitude: 39.93, longitude: 32.86, start_year: 2015, end_year: 2020, models: ["instesre_bird", "ineichen", "pvlib_bird"], include_pvgis_tmy: true, avg_year_strategies: ["combined"] },
+        example: { latitude: 39.93, longitude: 32.86, start_year: 2015, end_year: 2020, models: ["instesre_bird", "ineichen", "pvlib_bird"], include_pvgis_tmy: true },
       },
     ],
   },
@@ -306,13 +302,12 @@ const CATEGORIES: Category[] = [
         fields: [
           { name: "latitude / longitude / elevation", type: "float", required: true, desc_en: "Location", desc_tr: "Konum" },
           { name: "start_year / end_year", type: "int", required: false, default: "2015 / 2020", desc_en: "Analysis range (2005–2025)", desc_tr: "Analiz aralığı" },
-          { name: "avg_year_strategies", type: "string[]", required: false, default: '["combined"]', desc_en: "Averaging strategies", desc_tr: "Ortalama stratejileri" },
           { name: "ozone", type: "float", required: false, default: "0.3", desc_en: "Ozone column (atm-cm, 0–1)", desc_tr: "Ozon kolonu (atm-cm)" },
           { name: "aod500", type: "float", required: false, default: "0.1", desc_en: "Aerosol Optical Depth at 500 nm", desc_tr: "500 nm'de Aerosol Optik Derinliği" },
           { name: "aod380", type: "float", required: false, default: "0.15", desc_en: "Aerosol Optical Depth at 380 nm", desc_tr: "380 nm'de Aerosol Optik Derinliği" },
           { name: "albedo", type: "float", required: false, default: "0.2", desc_en: "Surface albedo (0–1)", desc_tr: "Yüzey albedosu (0–1)" },
         ],
-        example: { latitude: 39.93, longitude: 32.86, start_year: 2015, end_year: 2020, avg_year_strategies: ["combined"], ozone: 0.3, aod500: 0.1, albedo: 0.2 },
+        example: { latitude: 39.93, longitude: 32.86, start_year: 2015, end_year: 2020, ozone: 0.3, aod500: 0.1, albedo: 0.2 },
       },
       {
         method: "POST",
@@ -324,7 +319,6 @@ const CATEGORIES: Category[] = [
         fields: [
           { name: "latitude / longitude / elevation", type: "float", required: true, desc_en: "Location", desc_tr: "Konum" },
           { name: "start_year / end_year", type: "int", required: false, default: "2015 / 2020", desc_en: "Analysis range", desc_tr: "Analiz aralığı" },
-          { name: "avg_year_strategies", type: "string[]", required: false, default: '["combined"]', desc_en: "Averaging strategies", desc_tr: "Ortalama stratejileri" },
           { name: "timezone", type: "string", required: false, default: "UTC", desc_en: "IANA timezone", desc_tr: "IANA saat dilimi" },
         ],
         example: { latitude: 39.93, longitude: 32.86, start_year: 2015, end_year: 2020, timezone: "Europe/Istanbul" },
@@ -522,96 +516,109 @@ const CATEGORIES: Category[] = [
 
 function MethodBadge({ method }: { method: "POST" | "GET" }) {
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wider ${
+    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wider flex-shrink-0 ${
       method === "GET"
-        ? "bg-emerald-400/15 text-emerald-400 border border-emerald-400/20"
-        : "bg-blue-400/15 text-blue-400 border border-blue-400/20"
+        ? "bg-emerald-400/15 text-emerald-400 border border-emerald-400/30"
+        : "bg-blue-500/15 text-blue-500 border border-blue-500/30"
     }`}>
       {method}
     </span>
   );
 }
 
-function CopyButton({ text }: { text: string }) {
+function CopyButton({ text, small, onClickCapture }: { text: string; small?: boolean; onClickCapture?: (e: React.MouseEvent) => void }) {
   const [copied, setCopied] = useState(false);
-  const copy = async () => {
+  const copy = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onClickCapture?.(e);
     await navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 1800);
   };
   return (
     <button
+      type="button"
       onClick={copy}
-      className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-slate-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] transition-all"
+      className={`flex items-center gap-1 rounded transition-all flex-shrink-0 ${small ? "p-1.5" : "px-2 py-1 text-[10px]"}`}
+      style={{ color: "var(--text-muted)", background: "var(--bg-subtle-2)", border: "1px solid var(--border)" }}
+      title="Kopyala"
     >
-      {copied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
-      {copied ? "Kopyalandı" : "Kopyala"}
+      {copied
+        ? <Check className="h-3 w-3 text-emerald-500" />
+        : <Copy className="h-3 w-3" />}
+      {!small && (copied ? "Kopyalandı" : "Kopyala")}
     </button>
   );
 }
 
 function EndpointCard({ ep, isTr }: { ep: Endpoint; isTr: boolean }) {
   const [open, setOpen] = useState(false);
+  const fullUrl = `${BASE_URL}${ep.path}`;
 
   const curlExample = ep.method === "GET"
-    ? `curl "${BASE_URL}${ep.path}?db=CECMod&search=canadian&limit=10"`
-    : `curl -X POST "${BASE_URL}${ep.path}" \\
+    ? `curl "${fullUrl}?db=CECMod&search=canadian&limit=10"`
+    : `curl -X POST "${fullUrl}" \\
   -H "Content-Type: application/json" \\
   -d '${JSON.stringify(ep.example, null, 2)}'`;
 
   return (
     <div className="glass-card !p-0 overflow-hidden">
-      <button
-        type="button"
+      {/* Header — div instead of button to allow nested button (copy) */}
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-white/[0.02] transition-colors"
+        onKeyDown={(e) => e.key === "Enter" && setOpen(!open)}
+        className="w-full flex items-center gap-3 px-5 py-4 cursor-pointer select-none transition-colors"
+        style={{ outline: "none" }}
       >
         <MethodBadge method={ep.method} />
-        <code className="text-sm font-mono text-amber-300/90 flex-1 truncate">{ep.path}</code>
-        <span className="text-xs text-slate-500 hidden sm:block flex-shrink-0">
+        <code className="text-sm font-mono flex-1 truncate" style={{ color: "var(--accent)" }}>
+          {ep.path}
+        </code>
+        <CopyButton text={fullUrl} small />
+        <span className="text-xs hidden sm:block flex-shrink-0 max-w-[200px] truncate" style={{ color: "var(--text-muted)" }}>
           {isTr ? ep.summary_tr : ep.summary_en}
         </span>
-        {open ? (
-          <ChevronDown className="h-4 w-4 text-slate-500 flex-shrink-0" />
-        ) : (
-          <ChevronRight className="h-4 w-4 text-slate-500 flex-shrink-0" />
-        )}
-      </button>
+        {open
+          ? <ChevronDown className="h-4 w-4 flex-shrink-0" style={{ color: "var(--text-muted)" }} />
+          : <ChevronRight className="h-4 w-4 flex-shrink-0" style={{ color: "var(--text-muted)" }} />}
+      </div>
 
       {open && (
-        <div className="px-5 pb-5 border-t border-white/[0.04] space-y-4">
-          <p className="text-sm text-slate-400 mt-4 leading-relaxed">
+        <div className="px-5 pb-5 space-y-4" style={{ borderTop: "1px solid var(--border)" }}>
+          <p className="text-sm mt-4 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
             {isTr ? ep.desc_tr : ep.desc_en}
           </p>
 
           {ep.fields && ep.fields.length > 0 && (
             <div>
-              <h4 className="text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wider">
+              <h4 className="text-xs font-semibold mb-2 uppercase tracking-wider" style={{ color: "var(--text-primary)" }}>
                 {isTr ? "İstek Alanları" : "Request Fields"}
               </h4>
-              <div className="overflow-x-auto rounded-lg border border-white/[0.06]">
+              <div className="overflow-x-auto rounded-lg" style={{ border: "1px solid var(--border)" }}>
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="bg-white/[0.03] text-slate-400 border-b border-white/[0.06]">
-                      <th className="px-3 py-2 text-left font-medium">{isTr ? "Alan" : "Field"}</th>
-                      <th className="px-3 py-2 text-left font-medium">{isTr ? "Tip" : "Type"}</th>
-                      <th className="px-3 py-2 text-left font-medium">{isTr ? "Zorunlu" : "Required"}</th>
-                      <th className="px-3 py-2 text-left font-medium">{isTr ? "Varsayılan" : "Default"}</th>
-                      <th className="px-3 py-2 text-left font-medium">{isTr ? "Açıklama" : "Description"}</th>
+                    <tr style={{ background: "var(--bg-subtle-2)", borderBottom: "1px solid var(--border)" }}>
+                      <th className="px-3 py-2 text-left font-medium" style={{ color: "var(--text-muted)" }}>{isTr ? "Alan" : "Field"}</th>
+                      <th className="px-3 py-2 text-left font-medium" style={{ color: "var(--text-muted)" }}>{isTr ? "Tip" : "Type"}</th>
+                      <th className="px-3 py-2 text-left font-medium" style={{ color: "var(--text-muted)" }}>{isTr ? "Zorunlu" : "Req."}</th>
+                      <th className="px-3 py-2 text-left font-medium" style={{ color: "var(--text-muted)" }}>{isTr ? "Varsayılan" : "Default"}</th>
+                      <th className="px-3 py-2 text-left font-medium" style={{ color: "var(--text-muted)" }}>{isTr ? "Açıklama" : "Description"}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {ep.fields.map((f, i) => (
-                      <tr key={i} className="border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02]">
-                        <td className="px-3 py-2 font-mono text-amber-300/80">{f.name}</td>
-                        <td className="px-3 py-2 text-blue-300/70">{f.type}</td>
+                      <tr key={i} style={{ borderBottom: "1px solid var(--border)" }} className="last:border-0">
+                        <td className="px-3 py-2 font-mono" style={{ color: "var(--accent)" }}>{f.name}</td>
+                        <td className="px-3 py-2 text-blue-500 font-mono">{f.type}</td>
                         <td className="px-3 py-2">
                           {f.required
-                            ? <span className="text-red-400 font-semibold">{isTr ? "Evet" : "Yes"}</span>
-                            : <span className="text-slate-500">{isTr ? "Hayır" : "No"}</span>}
+                            ? <span className="text-red-500 font-semibold">{isTr ? "Evet" : "Yes"}</span>
+                            : <span style={{ color: "var(--text-muted)" }}>{isTr ? "Hayır" : "No"}</span>}
                         </td>
-                        <td className="px-3 py-2 font-mono text-slate-500">{f.default ?? "—"}</td>
-                        <td className="px-3 py-2 text-slate-400">{isTr ? f.desc_tr : f.desc_en}</td>
+                        <td className="px-3 py-2 font-mono" style={{ color: "var(--text-muted)" }}>{f.default ?? "—"}</td>
+                        <td className="px-3 py-2" style={{ color: "var(--text-secondary)" }}>{isTr ? f.desc_tr : f.desc_en}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -623,12 +630,15 @@ function EndpointCard({ ep, isTr }: { ep: Endpoint; isTr: boolean }) {
           {ep.example && Object.keys(ep.example).length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-2">
-                <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                <h4 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-primary)" }}>
                   {isTr ? "Örnek İstek (curl)" : "Example Request (curl)"}
                 </h4>
                 <CopyButton text={curlExample} />
               </div>
-              <pre className="bg-slate-950/60 border border-white/[0.06] rounded-lg p-4 text-xs font-mono text-slate-300 overflow-x-auto leading-relaxed whitespace-pre-wrap break-all sm:break-normal">
+              <pre
+                className="rounded-lg p-4 text-xs font-mono overflow-x-auto leading-relaxed whitespace-pre-wrap break-all sm:break-normal"
+                style={{ background: "var(--bg-input)", color: "var(--text-secondary)", border: "1px solid var(--border)" }}
+              >
                 {curlExample}
               </pre>
             </div>
@@ -657,14 +667,15 @@ export default function ApiDocsPage() {
         {/* ── Hero ── */}
         <div className="glass-card space-y-4">
           <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center">
-              <BookOpen className="h-5 w-5 text-amber-400" />
+            <div className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{ background: "var(--accent-dim)", border: "1px solid var(--accent-glow)" }}>
+              <BookOpen className="h-5 w-5" style={{ color: "var(--accent)" }} />
             </div>
             <div className="space-y-1">
-              <h1 className="text-xl font-bold text-slate-100">
+              <h1 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>
                 {isTr ? "API Dokümantasyonu" : "API Documentation"}
               </h1>
-              <p className="text-sm text-slate-400">
+              <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
                 {isTr
                   ? "Solarhesap REST API'si, güneş enerjisi simülasyonu ve hesaplama araçlarına programatik erişim sağlar."
                   : "The Solarhesap REST API provides programmatic access to solar energy simulation and calculation tools."}
@@ -673,110 +684,87 @@ export default function ApiDocsPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 pt-1">
-            <div className="flex-1 p-3 rounded-lg bg-white/[0.03] border border-white/[0.06]">
-              <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">
+            <div className="flex-1 p-3 rounded-lg" style={{ background: "var(--bg-subtle-2)", border: "1px solid var(--border)" }}>
+              <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>
                 {isTr ? "Temel URL" : "Base URL"}
               </p>
               <div className="flex items-center justify-between gap-2">
-                <code className="text-sm font-mono text-amber-300">{BASE_URL}</code>
+                <code className="text-sm font-mono" style={{ color: "var(--accent)" }}>{BASE_URL}</code>
                 <CopyButton text={BASE_URL} />
               </div>
             </div>
-            <div className="sm:w-48 p-3 rounded-lg bg-white/[0.03] border border-white/[0.06]">
-              <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">
+            <div className="sm:w-48 p-3 rounded-lg" style={{ background: "var(--bg-subtle-2)", border: "1px solid var(--border)" }}>
+              <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>
                 {isTr ? "İçerik Türü" : "Content-Type"}
               </p>
-              <code className="text-sm font-mono text-blue-300">application/json</code>
+              <code className="text-sm font-mono text-blue-500">application/json</code>
             </div>
-            <div className="sm:w-48 p-3 rounded-lg bg-white/[0.03] border border-white/[0.06]">
-              <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">
+            <div className="sm:w-48 p-3 rounded-lg" style={{ background: "var(--bg-subtle-2)", border: "1px solid var(--border)" }}>
+              <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>
                 {isTr ? "Kimlik Doğrulama" : "Authentication"}
               </p>
-              <span className="text-sm text-emerald-400 font-medium">
+              <span className="text-sm text-emerald-500 font-medium">
                 {isTr ? "Gerekmiyor" : "None required"}
               </span>
             </div>
           </div>
 
           {/* Health check */}
-          <div className="p-3 rounded-lg bg-emerald-400/[0.04] border border-emerald-400/[0.12]">
+          <div className="p-3 rounded-lg bg-emerald-500/[0.06]" style={{ border: "1px solid rgba(34,197,94,0.2)" }}>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <Activity className="h-3.5 w-3.5 text-emerald-400" />
-                <span className="text-xs font-semibold text-emerald-400">
+                <Activity className="h-3.5 w-3.5 text-emerald-500" />
+                <span className="text-xs font-semibold text-emerald-600">
                   {isTr ? "Sağlık Kontrolü" : "Health Check"}
                 </span>
-                <code className="text-xs font-mono text-slate-400">GET /health</code>
+                <code className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>GET /health</code>
               </div>
               <CopyButton text={healthCurl} />
             </div>
-            <pre className="text-xs font-mono text-slate-400">{healthCurl}</pre>
+            <pre className="text-xs font-mono" style={{ color: "var(--text-secondary)" }}>{healthCurl}</pre>
           </div>
         </div>
 
         {/* ── Category tabs ── */}
-        <div className="flex flex-wrap gap-1.5 p-1 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => setActiveCategory(cat.id)}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-                activeCategory === cat.id
-                  ? "bg-amber-400 text-slate-900"
-                  : "text-slate-400 hover:text-white hover:bg-white/[0.06]"
-              }`}
-            >
-              {cat.icon}
-              {isTr ? cat.label_tr : cat.label_en}
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                activeCategory === cat.id ? "bg-slate-900/30" : "bg-white/[0.08] text-slate-500"
-              }`}>
-                {cat.endpoints.length}
-              </span>
-            </button>
-          ))}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 rounded-xl"
+          style={{ background: "var(--bg-subtle-2)", border: "1px solid var(--border)" }}>
+          {CATEGORIES.map((cat) => {
+            const isActive = activeCategory === cat.id;
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setActiveCategory(cat.id)}
+                className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all"
+                style={isActive
+                  ? { background: "var(--accent)", color: "#fff" }
+                  : { color: "var(--text-muted)", background: "transparent" }}
+              >
+                {cat.icon}
+                <span className="truncate">{isTr ? cat.label_tr : cat.label_en}</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0"
+                  style={isActive
+                    ? { background: "rgba(0,0,0,0.2)", color: "#fff" }
+                    : { background: "var(--bg-subtle-3)", color: "var(--text-muted)" }}>
+                  {cat.endpoints.length}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         {/* ── Endpoints ── */}
         <div className="space-y-2">
-          <h2 className="text-sm font-semibold text-slate-300 flex items-center gap-2 mb-4">
+          <h2 className="text-sm font-semibold flex items-center gap-2 mb-4" style={{ color: "var(--text-primary)" }}>
             {activeData.icon}
             {isTr ? activeData.label_tr : activeData.label_en}
-            <span className="text-slate-600 font-normal">
+            <span className="font-normal" style={{ color: "var(--text-muted)" }}>
               — {activeData.endpoints.length} {isTr ? "endpoint" : "endpoints"}
             </span>
           </h2>
           {activeData.endpoints.map((ep) => (
             <EndpointCard key={ep.path} ep={ep} isTr={isTr} />
           ))}
-        </div>
-
-        {/* ── Avg-year strategy reference ── */}
-        <div className="glass-card space-y-3">
-          <h3 className="text-sm font-bold text-slate-200">
-            {isTr ? "Ortalama Yıl Stratejileri" : "Average-Year Strategies"}
-          </h3>
-          <p className="text-xs text-slate-400">
-            {isTr
-              ? "Çoklu yıl verisini tek bir temsili yıla indirgemek için kullanılır. avg_year_strategies alanını kabul eden tüm endpointlerde geçerlidir."
-              : "Used to reduce multi-year data to a single representative year. Applies to all endpoints that accept avg_year_strategies."}
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {[
-              { key: "simple_mean", en: "Arithmetic mean across years", tr: "Yıllar arası aritmetik ortalama" },
-              { key: "trimmed_mean", en: "Mean with outlier years removed (uses lower/upper percentile)", tr: "Aykırı yıllar çıkarılmış ortalama (lower/upper percentile ile)" },
-              { key: "exponential_weighted", en: "Exponential decay weighting — recent years count more (uses decay factor)", tr: "Üstel ağırlıklandırma — yakın yıllar daha fazla ağırlıklı (decay faktörü)" },
-              { key: "combined", en: "Equal blend of the three base strategies (recommended)", tr: "Üç temel stratejinin eşit karışımı (önerilen)" },
-              { key: "super_avg_year", en: "Weighted blend using per-month best-strategy selection", tr: "Aylık bazda en iyi strateji seçimi ile ağırlıklı karışım" },
-              { key: "all", en: "Shorthand: expands to all 5 strategies above", tr: "Kısayol: yukarıdaki 5 stratejinin tamamına genişler" },
-            ].map((s) => (
-              <div key={s.key} className="flex gap-2 p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
-                <code className="text-[10px] font-mono text-amber-300/80 flex-shrink-0 w-36">{s.key}</code>
-                <span className="text-xs text-slate-400">{isTr ? s.tr : s.en}</span>
-              </div>
-            ))}
-          </div>
         </div>
 
 

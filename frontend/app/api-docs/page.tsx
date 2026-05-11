@@ -779,27 +779,6 @@ export default function ApiDocsPage() {
           </div>
         </div>
 
-        {/* ── Interactive docs link ── */}
-        <div className="glass-card flex items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-medium text-slate-200">
-              {isTr ? "İnteraktif Dokümantasyon (Swagger)" : "Interactive Documentation (Swagger)"}
-            </p>
-            <p className="text-xs text-slate-500 mt-0.5">
-              {isTr
-                ? "FastAPI'nin otomatik oluşturduğu Swagger UI ile endpointleri tarayıcıdan test edebilirsiniz."
-                : "Test endpoints directly in the browser with the auto-generated Swagger UI."}
-            </p>
-          </div>
-          <a
-            href="/api/v1/docs"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium text-slate-900 bg-amber-400 hover:bg-amber-300 transition-colors"
-          >
-            {isTr ? "Swagger UI →" : "Open Swagger →"}
-          </a>
-        </div>
 
       </div>
     </main>

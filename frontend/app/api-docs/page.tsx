@@ -576,7 +576,6 @@ function EndpointCard({ ep, isTr }: { ep: Endpoint; isTr: boolean }) {
         <code className="text-sm font-mono flex-1 truncate" style={{ color: "var(--accent)" }}>
           {ep.path}
         </code>
-        <CopyButton text={fullUrl} small />
         <span className="text-xs hidden sm:block flex-shrink-0 max-w-[200px] truncate" style={{ color: "var(--text-muted)" }}>
           {isTr ? ep.summary_tr : ep.summary_en}
         </span>

@@ -518,7 +518,7 @@ export default function HistoricalPage() {
               <MapPin className="h-4 w-4 text-amber-400" />
               <h2 className="text-sm font-semibold text-slate-200">{tr("Location", "Konum Seçimi")}</h2>
             </div>
-            <div className="flex-1 min-h-0">
+            <div className="h-64 lg:flex-1 lg:min-h-0">
               <MapPicker latitude={lat} longitude={lng} onLocationChange={handleMapChange} height="100%" />
             </div>
             <div className="px-4 py-2.5 border-t border-white/[0.06] flex items-center gap-3 text-xs text-slate-500 flex-shrink-0">

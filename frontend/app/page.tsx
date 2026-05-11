@@ -78,7 +78,7 @@ export default function HomePage() {
             </p>
 
             <div className="flex flex-col items-center justify-center gap-4 sm:gap-3">
-              <Link href="/simulation" className="btn-primary text-lg px-10 py-4 group" id="cta-simulation">
+              <Link href="/modelchain" className="btn-primary text-lg px-10 py-4 group" id="cta-simulation">
                 <Zap className="h-5 w-5" />
                 {t("home.ctaSimulation")}
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -156,7 +156,7 @@ export default function HomePage() {
               <p className="text-sm text-slate-400 leading-relaxed mb-4">
                 {t("home.features.feature1Desc")}
               </p>
-              <Link href="/simulation"
+              <Link href="/modelchain"
                 className="inline-flex items-center gap-1 text-sm font-medium text-amber-400 hover:text-amber-300 transition-colors">
                 {t("home.features.feature1Link")} <ArrowRight className="h-3 w-3" />
               </Link>

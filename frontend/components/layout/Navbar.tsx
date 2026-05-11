@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Sun, Moon, Menu, X, Globe } from "lucide-react";
+import { Sun, Moon, Menu, X, Globe, BookOpen } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useTheme } from "@/context/ThemeContext";
 
@@ -20,6 +20,7 @@ export default function Navbar() {
     { href: "/irradiance", label: language === "tr" ? "Işınım Üretici" : "Irradiance Generator" },
     { href: "/modelchain", label: language === "tr" ? "Gelişmiş Tahmin" : "Advanced Forecast" },
     { href: "/calculation", label: t("nav.calculation") },
+    { href: "/api-docs", label: language === "tr" ? "API" : "API", icon: <BookOpen className="h-3.5 w-3.5" /> },
   ];
 
   const linkBase = "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200";
@@ -55,8 +56,9 @@ export default function Navbar() {
                   key={link.href}
                   href={link.href}
                   id={`nav-${link.href.replace("/", "") || "home"}`}
-                  className={`${linkBase} ${isActive ? linkActive : linkInactive}`}
+                  className={`${linkBase} ${isActive ? linkActive : linkInactive} flex items-center gap-1.5`}
                 >
+                  {"icon" in link && link.icon}
                   {link.label}
                 </Link>
               );

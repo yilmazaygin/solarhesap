@@ -415,10 +415,21 @@ export default function EstimatePage() {
                 </div>
 
                 {/* DC/AC warning */}
-                {sys?.dc_ac_warning && (
+                {sys?.dc_ac_warning && sys.dc_ac_ratio !== undefined && (
                   <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs">
                     <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                    <span>{sys.dc_ac_warning}</span>
+                    <span>
+                      {sys.dc_ac_ratio < 0.90
+                        ? tr(
+                            `DC/AC ratio is ${sys.dc_ac_ratio.toFixed(2)} (below 0.90). System is significantly under-invertered. Consider a smaller inverter for this system size.`,
+                            `DC/AC oranı ${sys.dc_ac_ratio.toFixed(2)} (0,90'ın altında). Sistem kayda değer ölçüde yetersiz invertörlü. Bu sistem boyutu için daha küçük bir invertör değerlendirin.`
+                          )
+                        : tr(
+                            `DC/AC ratio is ${sys.dc_ac_ratio.toFixed(2)} (above 1.45). Significant clipping expected during peak hours.`,
+                            `DC/AC oranı ${sys.dc_ac_ratio.toFixed(2)} (1,45'in üstünde). Pik saatlerde önemli kırpma bekleniyor.`
+                          )
+                      }
+                    </span>
                   </div>
                 )}
 

@@ -1,0 +1,227 @@
+# ./backend/app/api/v1/solar_simulation_routes.py
+"""Thin FastAPI route layer for solar simulation endpoints.
+
+All business logic lives in ``app.services.clearsky_service``,
+``app.services.modelchain_service``, and ``app.services.deep_comparison``.
+
+Routes only validate input and delegate to services.  Error handling is
+performed by the centralised exception-handler middleware registered in
+``app.core.error_handlers`` — no try/except blocks needed here.
+
+Heavy endpoints (run-modelchain, deep-comparison) use ``asyncio.to_thread``
+to run CPU-bound service code in a separate thread, keeping the FastAPI
+event loop non-blocking for concurrent requests.
+"""
+
+from __future__ import annotations
+
+import asyncio
+
+from fastapi import APIRouter
+
+from app.schemas.clearsky_api_schemas import (
+    InstestreBirdRequest,
+    PvlibIneichenRequest,
+    SimplifiedSolisRequest,
+    PvlibBirdRequest,
+    PvgisTmyRequest,
+    PvgisPOARequest,
+    DeepComparisonRequest,
+    DeepComparisonYieldRequest,
+    RunModelChainRequest,
+)
+from app.schemas.advanced_modelchain_schemas import RunModelChainAdvancedRequest
+from app.schemas.irradiance_generator_schemas import GenerateIrradianceRequest
+from app.schemas.basic_electric_schemas import BasicElectricRequest
+from app.schemas.historical_schemas import HistoricalBasicRequest, HistoricalAdvancedRequest
+from app.services import clearsky_service
+from app.services.modelchain_service import run_modelchain as _run_modelchain
+from app.services.deep_comparison import run_deep_comparison
+from app.services.deep_comparison_yield import run_deep_comparison_yield
+from app.services.advanced_modelchain_service import run_advanced_modelchain as _run_advanced_modelchain
+from app.services.irradiance_generator_service import generate_irradiance as _generate_irradiance
+from app.services.basic_electric_service import run_basic_electric as _run_basic_electric
+from app.services.historical_service import (
+    run_historical_basic as _run_historical_basic,
+    run_historical_advanced as _run_historical_advanced,
+)
+
+router = APIRouter(prefix="/solar-simulation", tags=["Solar Simulation Models"])
+
+
+# ===========================================================================
+# Individual model endpoints
+# ===========================================================================
+
+@router.post("/instesre-bird", summary="INSTESRE Bird Clear Sky")
+def instesre_bird(request: InstestreBirdRequest):
+    """Compute INSTESRE Bird clearsky irradiance with OpenMeteo atmospheric
+    data, then apply the selected average-year strategy(ies)."""
+    return clearsky_service.run_instesre_bird(request)
+
+
+@router.post("/pvlib-ineichen", summary="pvlib Ineichen/Perez Clear Sky")
+def pvlib_ineichen(request: PvlibIneichenRequest):
+    """Compute Ineichen/Perez clearsky irradiance with auto-loaded Linke
+    turbidity and OpenMeteo atmospheric data."""
+    return clearsky_service.run_ineichen(request)
+
+
+@router.post("/pvlib-solis", summary="pvlib Simplified Solis Clear Sky")
+def pvlib_simplified_solis(request: SimplifiedSolisRequest):
+    """Compute Simplified Solis clearsky irradiance with OpenMeteo
+    atmospheric data."""
+    return clearsky_service.run_simplified_solis(request)
+
+
+@router.post("/pvlib-bird", summary="pvlib Bird Clear Sky")
+def pvlib_bird(request: PvlibBirdRequest):
+    """Compute pvlib Bird clearsky irradiance with OpenMeteo atmospheric
+    data.  Same model as INSTESRE, pvlib implementation."""
+    return clearsky_service.run_pvlib_bird(request)
+
+
+@router.post("/pvgis-tmy", summary="PVGIS Typical Meteorological Year")
+def pvgis_tmy(request: PvgisTmyRequest):
+    """Fetch the PVGIS TMY for the given location.  Already a representative
+    year — no average-year processing is applied."""
+    return clearsky_service.run_pvgis_tmy(request)
+
+
+@router.post("/pvgis-poa", summary="PVGIS Hourly POA Irradiance")
+def pvgis_poa(request: PvgisPOARequest):
+    """Fetch multi-year PVGIS hourly POA data and apply average-year
+    strategy(ies).  SARAH2 data available 2005–2023."""
+    return clearsky_service.run_pvgis_poa(request)
+
+
+# ===========================================================================
+# Deep comparison (async — CPU-heavy)
+# ===========================================================================
+
+@router.post("/deep-comparison", summary="Deep Model Comparison")
+async def deep_comparison(request: DeepComparisonRequest):
+    """Run all selected solar simulation models with all selected avg-year
+    strategies and return a comparison matrix.
+
+    Uses ``asyncio.to_thread`` to avoid blocking the event loop.
+    """
+    return await asyncio.to_thread(run_deep_comparison, request)
+
+
+# ===========================================================================
+# PVLib ModelChain simulation (async — CPU-heavy)
+# ===========================================================================
+
+@router.post("/deep-comparison-yield", summary="Deep Comparison for Electric Yield")
+async def deep_comparison_yield(request: DeepComparisonYieldRequest):
+    """Run every requested model and simulate AC power yield.
+
+    Returns the electric power comparison metrics.
+    """
+    return await asyncio.to_thread(run_deep_comparison_yield, request)
+
+
+@router.post("/run-modelchain", summary="Run PVLib ModelChain Simulation")
+async def run_modelchain(request: RunModelChainRequest):
+    """Run a full PVLib ModelChain simulation.
+
+    Generates clearsky weather data using the selected model, applies
+    avg-year strategies, then runs a PV system simulation with the
+    provided location, module, inverter, and system configuration.
+
+    Returns both irradiance results and PV simulation output (AC/DC power).
+
+    Uses ``asyncio.to_thread`` to avoid blocking the event loop.
+    """
+    return await asyncio.to_thread(_run_modelchain, request)
+
+
+@router.post("/run-modelchain-advanced", summary="Advanced PVLib ModelChain Simulation")
+async def run_modelchain_advanced(request: RunModelChainAdvancedRequest):
+    """Run an advanced PVLib ModelChain simulation with full feature access.
+
+    Key improvements over run-modelchain:
+    - Module and inverter loaded directly from SAM databases (CECMod,
+      SandiaMod, CECInverter, SandiaInverter, ADRInverter)
+    - Multi-array mode: each array gets its own orientation, module params,
+      and temperature model (pvlib Array objects with FixedMount)
+    - Temperature model uses pvlib named configs (sapm, pvsyst) or manual
+    - Flat system mode: classic single-system configuration
+    - Fail-fast validation before expensive weather fetches
+
+    Supports all pvlib DC models (pvwatts, cec, sapm, desoto, pvsyst)
+    and AC models (pvwatts, sandia, adr).
+
+    Uses ``asyncio.to_thread`` to avoid blocking the event loop.
+    """
+    return await asyncio.to_thread(_run_advanced_modelchain, request)
+
+
+# ===========================================================================
+# Irradiance Generator — raw timeseries, no averaging
+# ===========================================================================
+
+@router.post("/generate-irradiance", summary="Generate Raw Irradiance Timeseries")
+async def generate_irradiance(request: GenerateIrradianceRequest):
+    """Generate raw hourly irradiance data for a location and time range.
+
+    No average-year strategies are applied — returns the full timeseries.
+
+    For PVGIS TMY the response also includes a simplified record set where
+    the year is stripped and only day_of_year + hour are used as time index.
+
+    Uses ``asyncio.to_thread`` to avoid blocking the event loop.
+    """
+    return await asyncio.to_thread(_generate_irradiance, request)
+
+
+# ===========================================================================
+# Basic Electric Production Estimate (async — fetches PVGIS + runs ModelChain)
+# ===========================================================================
+
+@router.post("/basic-electric", summary="Basic Electric Production Estimate")
+async def basic_electric(request: BasicElectricRequest):
+    """Simple solar electricity production estimate.
+
+    Given a location, available area, and panel efficiency tier, returns:
+    - Hourly AC output (kW) for a full typical meteorological year
+    - Monthly energy totals (kWh)
+    - Annual summary (kWh, specific yield, capacity factor)
+    - System configuration (panel count, strings, inverter count)
+
+    Weather source is always PVGIS TMY.  No averaging strategies applied.
+    Panel and inverter are selected automatically from the efficiency tier.
+
+    Uses ``asyncio.to_thread`` to avoid blocking the event loop.
+    """
+    return await asyncio.to_thread(_run_basic_electric, request)
+
+
+# ===========================================================================
+# Historical Production Simulation (async — fetches PVGIS POA + runs ModelChain)
+# ===========================================================================
+
+@router.post("/historical/basic", summary="Historical Basic Production Simulation")
+async def historical_basic(request: HistoricalBasicRequest):
+    """Simulate solar production for a specific historical year using PVGIS hourly POA data.
+
+    Unlike basic-electric (which uses TMY), this endpoint fetches actual
+    meteorological data for the requested calendar year (2005–2022).
+    System layout is auto-configured from the efficiency-tier preset.
+
+    The response format matches basic-electric — use hourly/monthly data for
+    comparison against real measured production.
+    """
+    return await asyncio.to_thread(_run_historical_basic, request)
+
+
+@router.post("/historical/advanced", summary="Historical Advanced Production Simulation")
+async def historical_advanced(request: HistoricalAdvancedRequest):
+    """Simulate solar production for a specific historical year with a custom ModelChain.
+
+    Same as historical/basic but accepts a full ModelChain configuration
+    (module, inverter, temperature model, DC/AC models) for higher accuracy.
+    Weather source is always PVGIS hourly POA for the chosen year.
+    """
+    return await asyncio.to_thread(_run_historical_advanced, request)

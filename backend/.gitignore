@@ -1,0 +1,14 @@
+.venv/
+.env
+
+__pycache__/
+*.pyc
+*.pyo
+
+*.log
+/logs/*
+!/logs/.gitkeep
+
+# Analysis / scratch files
+*.md
+!README.md

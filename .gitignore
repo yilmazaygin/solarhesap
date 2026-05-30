@@ -1,0 +1,21 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Env files
+.env
+.env.local
+.env.*.local
+
+# Docker override files (local tweaks, not for repo)
+docker-compose.override.yml
+
+# Simulation output / test data
+*.json
+!frontend/config/admin.json
+!package.json
+!package-lock.json
+!tsconfig*.json
+
+# Logs
+*.log

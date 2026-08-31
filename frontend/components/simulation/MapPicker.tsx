@@ -55,7 +55,7 @@ export default function MapPicker({
         attributionControl: true,
       });
 
-      const tileUrl = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?api_key=cb1_2nog_1_d2327320336f9b9213d5f722";
+      const tileUrl = "https://{s}.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}{r}.png?key=cb1_2nog_1_d2327320336f9b9213d5f722";
 
       L.tileLayer(tileUrl, {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',

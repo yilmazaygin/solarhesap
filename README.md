@@ -547,3 +547,7 @@ This project is licensed under the [MIT License](LICENSE).
 [GitHub](https://github.com/yilmazaygin/solarhesap) · [Live Demo](https://solarhesap.net.tr)
 
 </div>
+
+---
+
+> *Son güncelleme: 31 Ağustos 2026*
